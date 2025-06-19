@@ -1,0 +1,25 @@
+# Directories
+.vs/
+.vscode/
+bin/
+bin-int/
+.idea/
+
+# macOS
+.DS_Store
+
+#imgui
+imgui.ini
+
+# solution files
+**.sln
+**.vcxproj
+**.vcxproj.filters
+**.vcxproj.user
+
+# Files
+*.user
+*.sim
+
+# Prerequisites
+*.d
