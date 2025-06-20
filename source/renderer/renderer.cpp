@@ -1,8 +1,8 @@
-#include "core/renderer.hpp"
+#include "renderer/renderer.hpp"
 
 #include "core/log.hpp"
-#include "core/transform.hpp"
-#include "core/drawable.hpp"
+#include "world/transform.hpp"
+#include "renderer/drawable.hpp"
 
 renderer::renderer(sf::RenderTarget& target)
     : target{ &target }

@@ -29,6 +29,8 @@ public:
     template<typename component>
     bool remove_component(entity entity);
 
+    void clear();
+
 private:
     registry registry;
 };

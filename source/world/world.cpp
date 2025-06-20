@@ -1,4 +1,4 @@
-#include "core/world.hpp"
+#include "world/world.hpp"
 
 entity world::create_entity()
 {
@@ -8,4 +8,9 @@ entity world::create_entity()
 void world::destroy_entity(entity entity)
 {
     registry.destroy(entity);
+}
+
+void world::clear()
+{
+    registry.clear();
 }

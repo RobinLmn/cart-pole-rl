@@ -1,5 +1,5 @@
 #pragma once
 
-#include "core/world.hpp"
+#include "world/world.hpp"
 
 void physics_step(float dt, world& world);

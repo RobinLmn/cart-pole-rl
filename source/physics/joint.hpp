@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/world.hpp"
+#include "world/world.hpp"
 
 #include <glm/glm.hpp>
 

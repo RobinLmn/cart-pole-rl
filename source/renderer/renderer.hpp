@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/world.hpp"
+#include "world/world.hpp"
 
 #include <SFML/graphics.hpp>
 

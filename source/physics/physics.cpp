@@ -1,9 +1,10 @@
-#include "core/physics.hpp"
+#include "physics/physics.hpp"
 
 #include "core/log.hpp"
-#include "core/transform.hpp"
-#include "core/rigidbody.hpp"
-#include "core/joint.hpp"
+
+#include "physics/rigidbody.hpp"
+#include "physics/joint.hpp"
+#include "world/transform.hpp"
 
 #include <glm/gtx/rotate_vector.hpp>
 
