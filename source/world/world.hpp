@@ -9,7 +9,7 @@ class world
 {
 public:
     [[nodiscard]] entity create_entity();
-    void destroy_entity(entity entity);
+    void destroy_entity(const entity entity);
 
     template<typename... component>
     [[nodiscard]] decltype(auto) view();
@@ -18,16 +18,16 @@ public:
     [[nodiscard]] decltype(auto) view() const;
 
     template<typename component, typename... args_type>
-    decltype(auto) add_component(entity entity, args_type&&... args);
+    decltype(auto) add_component(const entity entity, args_type&&... args);
 
     template<typename component>
-    [[nodiscard]] component& get_component(entity entity);
+    [[nodiscard]] component& get_component(const entity entity);
 
     template<typename component>
-    [[nodiscard]] const component& get_component(entity entity) const;
+    [[nodiscard]] const component& get_component(const entity entity) const;
 
     template<typename component>
-    bool remove_component(entity entity);
+    bool remove_component(const entity entity);
 
     void clear();
 
@@ -48,25 +48,25 @@ decltype(auto) world::view() const
 }
 
 template<typename component, typename... args_type>
-decltype(auto) world::add_component(entity entity, args_type&&... args)
+decltype(auto) world::add_component(const entity entity, args_type&&... args)
 {
     return registry.emplace<component>(entity, std::forward<args_type>(args)...);
 }
 
 template<typename component>
-bool world::remove_component(entity entity)
+bool world::remove_component(const entity entity)
 {
     return registry.remove<component>(entity) == 1;
 }
 
 template<typename component>
-component& world::get_component(entity entity)
+component& world::get_component(const entity entity)
 {
     return registry.get<component>(entity);
 }
 
 template<typename component>
-const component& world::get_component(entity entity) const
+const component& world::get_component(const entity entity) const
 {
     return registry.get<component>(entity);
 }

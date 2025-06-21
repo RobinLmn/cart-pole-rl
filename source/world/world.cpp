@@ -5,7 +5,7 @@ entity world::create_entity()
     return registry.create();
 }
 
-void world::destroy_entity(entity entity)
+void world::destroy_entity(const entity entity)
 {
     registry.destroy(entity);
 }

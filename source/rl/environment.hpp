@@ -8,14 +8,14 @@
 class environment
 {
 public:
-    virtual void reset();
+    virtual void reset() = 0;
 
     [[nodiscard]] virtual bool is_done() const = 0;
-    [[nodiscard]] virtual float step(const float dt, const std::vector<float>& actions) = 0;
-    [[nodiscard]] virtual std::vector<float> get_state() = 0;
-    [[nodiscard]] virtual agent create_agent() = 0;
+    [[nodiscard]] virtual float step(const float dt, const int action) = 0;
+    [[nodiscard]] virtual std::vector<float> get_state() const = 0;
+    [[nodiscard]] virtual agent create_agent() const = 0;
 
-    const world& get_world() const;
+    [[nodiscard]] const world& get_world() const;
 
 protected:
     world world;

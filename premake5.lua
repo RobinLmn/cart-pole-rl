@@ -1,5 +1,6 @@
-workspace "walking-stick"
+workspace "cart-pole-rl"
 	architecture "x64"
+	startproject "cart-pole-rl"
 	
 	configurations
 	{
@@ -14,11 +15,11 @@ include "thirdparty/ImGui"
 include "thirdparty/GLFW"
 include "thirdparty/glad"
 
-project "walking-stick"
+project "cart-pole-rl"
 	location ""
 	kind "ConsoleApp"
 	language "c++"
-	cppdialect "c++latest"
+	cppdialect "c++20"
 
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
@@ -40,6 +41,7 @@ project "walking-stick"
 		"thirdparty/sfml/include",
 		"thirdparty/glm",
 		"thirdparty/entt/single_include",
+		"thirdparty/Eigen",
 	}
 
 	libdirs

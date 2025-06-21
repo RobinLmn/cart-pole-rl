@@ -8,13 +8,13 @@
 class cartpole final : public environment
 {
 public:
-    [[nodiscard]] virtual float step(const float dt, const std::vector<float>& actions) override;
+    [[nodiscard]] float step(const float dt, const int action) override;
 
-    virtual void reset() override;
+    void reset() override;
 
-    [[nodiscard]] virtual bool is_done() const override;
-    [[nodiscard]] virtual std::vector<float> get_state() override;
-    [[nodiscard]] virtual agent create_agent() override;
+    [[nodiscard]] bool is_done() const override;
+    [[nodiscard]] std::vector<float> get_state() const override;
+    [[nodiscard]] agent create_agent() const override;
 
 private:
     entity cart;

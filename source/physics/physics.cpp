@@ -1,6 +1,7 @@
 #include "physics/physics.hpp"
 
 #include "core/log.hpp"
+#include "core/utils.hpp"
 
 #include "physics/rigidbody.hpp"
 #include "physics/joint.hpp"
@@ -8,22 +9,13 @@
 
 #include <glm/gtx/rotate_vector.hpp>
 
-float cross(const glm::vec2& a, const glm::vec2& b)
-{
-    return a.x * b.y - a.y * b.x;
-}
-
-glm::vec2 cross(float s, const glm::vec2& v)
-{
-	return glm::vec2(-s * v.y, s * v.x);
-}
-
-void physics_step(float dt, world& world)
+void physics_step(const float dt, world& world)
 {
     // Apply gravity
     for (const auto& [entity, rigidbody] : world.view<rigidbody, const uses_gravity>())
     {
-        rigidbody.force += glm::vec2{ 0.f, -400.f } * rigidbody.mass;
+        static constexpr glm::vec2 gravity{0.0f, -9.8f};
+        rigidbody.force += gravity * rigidbody.mass;
     }
 
     // Apply friction/damping
@@ -47,7 +39,8 @@ void physics_step(float dt, world& world)
     }
 
     // Resolve joint constraints
-    for (int joint_iter = 0; joint_iter < 5; ++joint_iter)
+    static constexpr int joint_iter_max = 10;
+    for (int joint_iter = 0; joint_iter < joint_iter_max; ++joint_iter)
     {
         for (const auto& [entity, joint] : world.view<joint>())
         {
@@ -57,24 +50,24 @@ void physics_step(float dt, world& world)
             transform& B = world.get_component<transform>(joint.b);
             rigidbody& rbB = world.get_component<rigidbody>(joint.b);
 
-            glm::vec2 rA = glm::rotate(joint.anchor_a_local, A.rotation);
-            glm::vec2 rB = glm::rotate(joint.anchor_b_local, B.rotation);
+            const glm::vec2 rA = glm::rotate(joint.anchor_a_local, A.rotation);
+            const glm::vec2 rB = glm::rotate(joint.anchor_b_local, B.rotation);
 
-            glm::vec2 worldAnchorA = A.position + rA;
-            glm::vec2 worldAnchorB = B.position + rB;
+            const glm::vec2 worldAnchorA = A.position + rA;
+            const glm::vec2 worldAnchorB = B.position + rB;
             
-            const float beta = 0.2f;
+            static constexpr float beta = 0.2f;
             const glm::vec2 position_error = worldAnchorB - worldAnchorA;
             const glm::vec2 bias = (beta / dt) * position_error;
 
-            glm::vec2 vA = rbA.velocity + cross(rbA.angular_velocity, rA);
-            glm::vec2 vB = rbB.velocity + cross(rbB.angular_velocity, rB);
-            glm::vec2 relVel = vB - vA;
+            const glm::vec2 vA = rbA.velocity + cross(rbA.angular_velocity, rA);
+            const glm::vec2 vB = rbB.velocity + cross(rbB.angular_velocity, rB);
+            const glm::vec2 relVel = vB - vA;
 
-            float mA = 1.f / rbA.mass;
-            float mB = 1.f / rbB.mass;
-            float iA = 1.f / rbA.inertia;
-            float iB = 1.f / rbB.inertia;
+            const float mA = 1.f / rbA.mass;
+            const float mB = 1.f / rbB.mass;
+            const float iA = 1.f / rbA.inertia;
+            const float iB = 1.f / rbB.inertia;
 
             glm::mat2 K{ 0.f };
             K[0][0] = mA + mB + rA.y*rA.y*iA + rB.y*rB.y*iB;
@@ -82,7 +75,7 @@ void physics_step(float dt, world& world)
             K[1][0] = K[0][1];
             K[1][1] = mA + mB + rA.x*rA.x*iA + rB.x*rB.x*iB;
             
-            glm::vec2 impulse = -glm::inverse(K) * (relVel + bias);
+            const glm::vec2 impulse = -glm::inverse(K) * (relVel + bias);
 
             rbA.velocity -= impulse * mA;
             rbA.angular_velocity -= cross(rA, impulse) * iA;
@@ -95,7 +88,7 @@ void physics_step(float dt, world& world)
     // Resolve movement bounds
     for (const auto& [entity, transform, rigidbody, bounds] : world.view<transform, rigidbody, const movement_bounds>())
     {
-        auto clamp_axis = [&](float& position, float& velocity, float min_val, float max_val) 
+        auto clamp_axis = [](float& position, float& velocity, const float min_val, const float max_val) 
         {
             if (position < min_val)
             {

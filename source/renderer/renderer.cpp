@@ -1,50 +1,49 @@
 #include "renderer/renderer.hpp"
 
-#include "core/log.hpp"
+#include "world/world.hpp"
 #include "world/transform.hpp"
 #include "renderer/drawable.hpp"
+
+#include <SFML/Graphics.hpp>
 
 renderer::renderer(sf::RenderTarget& target)
     : target{ &target }
 {
+    view.setCenter({ 0.f, 0.5f });
+
+    static constexpr float view_height = 3.f;
+    const sf::Vector2u target_size = target.getSize();
+    const float aspect_ratio = static_cast<float>(target_size.x) / target_size.y;
+    view.setSize({ view_height * aspect_ratio, -view_height });
 }
 
-void renderer::draw(const world& world)
+void renderer::draw(const world& world) const
 {
-    ASSERT(target, return, "Render target was nullptr.");
+    target->setView(view);
     target->clear(sf::Color{ 30, 30, 30 });
-
-    const sf::Vector2u window_size = target->getSize();
-    const float window_width = static_cast<float>(window_size.x);
-    const float window_height = static_cast<float>(window_size.y);
 
     for (const auto& [entity, transform, rectangle] : world.view<const transform, const rectangle>())
     {
-        const float x = window_width * 0.5f + transform.position.x;
-        const float y = window_height * 0.5f - transform.position.y;
+        sf::RectangleShape shape(rectangle.size);
+        shape.setOrigin({ rectangle.size.x * 0.5f, rectangle.size.y * 0.5f });
+        shape.setPosition({ transform.position.x, transform.position.y });
+        shape.setRotation(sf::radians(transform.rotation));
 
-        sf::RectangleShape sf_rectangle{ rectangle.size };
-        sf_rectangle.setOrigin(sf::Vector2f{ rectangle.size.x * 0.5f, rectangle.size.y * 0.5f });
-        sf_rectangle.setPosition(sf::Vector2f{ x, y });
-        sf_rectangle.setRotation(-sf::radians(transform.rotation));
-        sf_rectangle.setFillColor(rectangle.material.fill_color);
-        sf_rectangle.setOutlineColor(rectangle.material.outline_color);
-        sf_rectangle.setOutlineThickness(rectangle.material.outline_thickness);
-
-        target->draw(sf_rectangle);
+        shape.setFillColor(rectangle.material.fill_color);
+        shape.setOutlineColor(rectangle.material.outline_color);
+        shape.setOutlineThickness(-rectangle.material.outline_thickness * 0.01f);
+        
+        target->draw(shape);
     }
 
     for (const auto& [entity, transform, circle] : world.view<const transform, const circle>())
     {
-        const float x = window_width * 0.5f + transform.position.x;
-        const float y = window_height * 0.5f - transform.position.y;
-
         sf::CircleShape sf_circle{ circle.radius };
-        sf_circle.setOrigin(sf::Vector2f{ circle.radius, circle.radius });
-        sf_circle.setPosition(sf::Vector2f{ x, y });
+        sf_circle.setOrigin({ circle.radius, circle.radius });
+        sf_circle.setPosition({ transform.position.x, transform.position.y });
         sf_circle.setFillColor(circle.material.fill_color);
         sf_circle.setOutlineColor(circle.material.outline_color);
-        sf_circle.setOutlineThickness(circle.material.outline_thickness);
+        sf_circle.setOutlineThickness(-circle.material.outline_thickness * 0.01f);
 
         target->draw(sf_circle);
     }

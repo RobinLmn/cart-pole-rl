@@ -3,15 +3,16 @@
 #include "rl/simulation.hpp"
 #include "gyms/cartpole.hpp"
 
-
 int main()
 {
 #ifdef DEBUG
 	logger::initialize();
 #endif
 
-	cartpole cartpole;
-	simulation simulation{ &cartpole };
+	static constexpr bool headless = false;
 
-	simulation.run(1);
+	cartpole cartpole;
+	simulation simulation{ &cartpole, headless };
+
+	simulation.run(600);
 }

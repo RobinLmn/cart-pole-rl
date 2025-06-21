@@ -2,16 +2,22 @@
 
 #include "world/world.hpp"
 
-#include <SFML/graphics.hpp>
+#include <SFML/Graphics/View.hpp>
+
+namespace sf
+{
+    class RenderTarget;
+}
 
 class renderer
 {
 public:
-    renderer(sf::RenderTarget& target);
+    explicit renderer(sf::RenderTarget& target);
 
 public:
-    void draw(const world& world);
+    void draw(const world& world) const;
 
 private:
     sf::RenderTarget* target;
+    sf::View view;
 };

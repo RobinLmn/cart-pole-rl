@@ -1,5 +1,8 @@
 #include "gyms/cartpole.hpp"
 
+#include "core/log.hpp"
+#include "core/utils.hpp"
+
 #include "rl/agent.hpp"
 
 #include "renderer/renderer.hpp"
@@ -13,31 +16,36 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 
+static constexpr float cart_limit = 2.4f;
+static constexpr float angle_limit = 12.f * 3.1415f / 180.0f;
+static constexpr float cart_vel_heuristic = 2.0f;
+static constexpr float pole_vel_heuristic = 2.0f;
+
 void cartpole::reset()
 {
     environment::reset();
 
     static constexpr material pink{ { 215, 43, 122, 128 }, { 215, 43, 122, 255 }, 4.f };
-	static constexpr material white{ { 255, 255, 255, 128 }, { 255, 255, 255, 255 }, 4.f };
+	static constexpr material white{ { 255, 255, 255, 255 }, { 255, 255, 255, 255 }, 0.f };
 
-    const glm::vec2 cart_size = glm::vec2{ 400.f, 200.f };
-	const glm::vec2 cart_pos = glm::vec2{ 0.f, -200.f };
+    const glm::vec2 cart_size = glm::vec2{ 1.0f, 0.5f };
+	const glm::vec2 cart_pos = glm::vec2{ 0.f, 0.f };
 	const glm::vec2 hinge_pos = cart_pos + glm::vec2{ 0.f, cart_size.y * 0.5f };
-	const glm::vec2 pole_size = glm::vec2{ 10.f, 400.f };
-	const float pole_rotation = -0.2f;
+	const glm::vec2 pole_size = glm::vec2{ 0.05f, 1.0f };
+	const float pole_rotation = random_uniform(-0.05f, 0.05f);
 	const glm::vec2 pole_pos = hinge_pos - glm::rotate(glm::vec2{ 0.f, -pole_size.y * 0.5f }, pole_rotation);
 	const float pole_inertia = (1.0f / 3.0f) * 1.0f * (pole_size.y * pole_size.y);
 
     cart = world.create_entity();
 	world.add_component<transform>(cart, cart_pos, 0.f );
-	world.add_component<rigidbody>(cart, rigidbody{ 100.f, glm::vec2{ 0.f }, glm::vec2{ 0.f }, 1e8f, 0.f, 0.f, 0.8f });
-	world.add_component<movement_bounds>(cart, movement_bounds{ glm::vec2{-800.f, -200.f}, glm::vec2{800.f, -200.f} });
+	world.add_component<rigidbody>(cart, rigidbody{ 1.f, glm::vec2{ 0.f }, glm::vec2{ 0.f }, 1e8f, 0.f, 0.f, 0.f });
     world.add_component<rectangle>(cart, sf::Vector2f{ cart_size.x, cart_size.y }, pink);
+	world.add_component<movement_bounds>(cart, glm::vec2{ -4.f, 0.f }, glm::vec2{ 4.f, 0.f });
 
 	pole = world.create_entity();
 	world.add_component<transform>(pole, pole_pos, pole_rotation);
 	world.add_component<uses_gravity>(pole);
-	world.add_component<rigidbody>(pole, rigidbody{ 1.f, glm::vec2{ 0.f }, glm::vec2{ 0.f }, pole_inertia, 0.f, 0.f, 0.8f });
+	world.add_component<rigidbody>(pole, rigidbody{ 0.1f, glm::vec2{ 0.f }, glm::vec2{ 0.f }, pole_inertia, 0.f, 0.f, 0.f });
 	world.add_component<rectangle>(pole, sf::Vector2f{ pole_size.x, pole_size.y }, white);
 
 	const entity hinge = world.create_entity();
@@ -46,27 +54,50 @@ void cartpole::reset()
 
 bool cartpole::is_done() const
 {
-    // @todo
-    return false;
+    const float cart_x = world.get_component<transform>(cart).position.x;
+    const float pole_angle = world.get_component<transform>(pole).rotation;
+
+    return std::abs(cart_x) > cart_limit || std::abs(pole_angle) > angle_limit;
 }
 
-float cartpole::step(const float dt, const std::vector<float>& actions)
+float cartpole::step(const float dt, const int action)
 {
-    // @todo: process actions to move cart
+    ASSERT(action == 0 || action == 1, return 0.f, "Expected discrete action to be 0 or 1 (left/right)");
+
+    const float force = (action == 0) ? -10.f : 10.f;
+    world.get_component<rigidbody>(cart).force += force;
 
     physics_step(dt, world);
 
-    // @todo: return reward
-    return 0.f;
+    return 1.f;
 }
 
-std::vector<float> cartpole::get_state()
+std::vector<float> cartpole::get_state() const
 {
-    // @todo: return cart x position, cart velocity, pole angle and pole angular velocity
-    return {};
+    const float cart_x = world.get_component<transform>(cart).position.x / cart_limit;
+    const float cart_velocity = world.get_component<rigidbody>(cart).velocity.x / cart_vel_heuristic;
+    const float pole_angle = world.get_component<transform>(pole).rotation / angle_limit;
+    const float pole_angular_velocity = world.get_component<rigidbody>(pole).angular_velocity / pole_vel_heuristic;
+
+    return { cart_x, cart_velocity, pole_angle, pole_angular_velocity };
 }
 
-agent cartpole::create_agent()
+agent cartpole::create_agent() const
 {
-    return agent{};
+    neural_network nn;
+
+    activation_function relu_activation = [](const Eigen::MatrixXf& x) { return x.array().cwiseMax(0.0f); };
+    activation_function relu_derivative = [](const Eigen::MatrixXf& x) { return (x.array() > 0.0f).cast<float>(); };
+
+    activation_function identity = [](const Eigen::MatrixXf& x) { return x; };
+    activation_function identity_deriv = [](const Eigen::MatrixXf& x) { return Eigen::MatrixXf::Ones(x.rows(), x.cols()); };
+
+    nn.add_layer(layer{ 4, 128, relu_activation, relu_derivative });
+    nn.add_layer(layer{ 128, 64, relu_activation, relu_derivative });
+    nn.add_layer(layer{ 64, 2, identity, identity_deriv });
+
+    static constexpr float gamma = 0.99f;
+    static constexpr float learning_rate = 0.001f;
+
+    return agent{ nn, gamma, learning_rate };
 }
