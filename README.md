@@ -5,8 +5,8 @@ A reinforcement learning system built from scratch in C++. This project implemen
 <div align="center">
 <table>
 <tr>
-<td align="center"><img src="docs/learning_curve.png" width="400"><br><i>Training progress showing reward improvement over episodes</i></td>
-<td align="center"><img src="docs/cartpole-learning.gif" width="400"><br><i>Real-time simulation of the agent learning to balance the pole</i></td>
+<td align="center"><img src="docs/learning_curve_2.png" width="400"><br><i>Training progress showing reward improvement over episodes</i></td>
+<td align="center"><img src="docs/balancing-cartpole.gif" width="400"><br><i>Real-time simulation of the agent learning to balance the pole</i></td>
 </tr>
 </table>
 </div>

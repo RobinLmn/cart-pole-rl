@@ -13,7 +13,7 @@ int main()
 
 	cartpole cartpole;
 
-	static constexpr bool headless = true;
+	static constexpr bool headless = false;
 	static constexpr float dt = 1.f / 60.f;
 	static constexpr int episodes = 1000;
 	static constexpr int batch_size = 10;
