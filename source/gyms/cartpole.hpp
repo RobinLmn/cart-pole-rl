@@ -1,9 +1,6 @@
 #pragma once
 
 #include "rl/environment.hpp"
-#include "renderer/renderer.hpp"
-
-#include <SFML/Window.hpp>
 
 class cartpole final : public environment
 {

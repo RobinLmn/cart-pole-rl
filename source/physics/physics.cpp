@@ -5,9 +5,13 @@
 
 #include "physics/rigidbody.hpp"
 #include "physics/joint.hpp"
+#include "physics/collision.hpp"
 #include "world/transform.hpp"
 
 #include <glm/gtx/rotate_vector.hpp>
+
+#include <array>
+#include <limits>
 
 void physics_step(const float dt, world& world)
 {
@@ -85,30 +89,38 @@ void physics_step(const float dt, world& world)
         }
     }
 
-    // Resolve movement bounds
-    for (const auto& [entity, transform, rigidbody, bounds] : world.view<transform, rigidbody, const movement_bounds>())
+    // Resolve ground collisions
+    for (const auto& [entity, transform, oobb, rigidbody] : world.view<transform, const oobb_collider, rigidbody>())
     {
-        auto clamp_axis = [](float& position, float& velocity, const float min_val, const float max_val) 
+        const glm::vec2 half_size = oobb.extent * 0.5f;
+        const std::array<glm::vec2, 4> local_vertices = 
         {
-            if (position < min_val)
-            {
-                position = min_val;
-                if (velocity < 0.f) 
-                {
-                    velocity = 0.f;
-                }
-            }
-            if (position > max_val)
-            {
-                position = max_val;
-                if (velocity > 0.f)
-                {
-                    velocity = 0.f;
-                }
-            }
+            glm::vec2{ half_size.x, half_size.y },
+            glm::vec2{ -half_size.x, half_size.y },
+            glm::vec2{ -half_size.x, -half_size.y },
+            glm::vec2{ half_size.x, -half_size.y }
         };
 
-        clamp_axis(transform.position.x, rigidbody.velocity.x, bounds.min.x, bounds.max.x);
-        clamp_axis(transform.position.y, rigidbody.velocity.y, bounds.min.y, bounds.max.y);
+        float min_y = std::numeric_limits<float>::max();
+        glm::vec2 contact_point_local;
+
+        for (const glm::vec2& local_v : local_vertices)
+        {
+            const glm::vec2 world_v = transform.position + glm::rotate(local_v, transform.rotation);
+            if (world_v.y < min_y)
+            {
+                min_y = world_v.y;
+                contact_point_local = local_v;
+            }
+        }
+
+        static constexpr float ground_level = 0.f;
+        const float penetration = ground_level - min_y;
+
+        if (penetration > 0.f)
+        {
+            transform.position.y += penetration;
+            rigidbody.velocity.y = 0.f;
+        }
     }
 }

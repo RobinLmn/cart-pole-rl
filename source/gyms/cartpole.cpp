@@ -12,6 +12,7 @@
 #include "physics/joint.hpp"
 #include "physics/rigidbody.hpp"
 #include "physics/physics.hpp"
+#include "physics/collision.hpp"
 
 #include <glm/glm.hpp>
 #include <glm/gtx/rotate_vector.hpp>
@@ -27,9 +28,10 @@ void cartpole::reset()
 
     static constexpr material pink{ { 215, 43, 122, 128 }, { 215, 43, 122, 255 }, 4.f };
 	static constexpr material white{ { 255, 255, 255, 255 }, { 255, 255, 255, 255 }, 0.f };
+    static constexpr material grey{ { 25, 25, 25, 255 }, { 10, 10, 10, 10 }, 0.f };
 
     const glm::vec2 cart_size = glm::vec2{ 1.0f, 0.5f };
-	const glm::vec2 cart_pos = glm::vec2{ 0.f, 0.f };
+	const glm::vec2 cart_pos = glm::vec2{ 0.f, 0.25f };
 	const glm::vec2 hinge_pos = cart_pos + glm::vec2{ 0.f, cart_size.y * 0.5f };
 	const glm::vec2 pole_size = glm::vec2{ 0.05f, 1.0f };
 	const float pole_rotation = random_uniform(-0.05f, 0.05f);
@@ -39,15 +41,19 @@ void cartpole::reset()
     cart = world.create_entity();
 	world.add_component<transform>(cart, cart_pos, 0.f );
 	world.add_component<rigidbody>(cart, rigidbody{ 1.f, glm::vec2{ 0.f }, glm::vec2{ 0.f }, 1e8f, 0.f, 0.f, 0.f });
-    world.add_component<rectangle>(cart, sf::Vector2f{ cart_size.x, cart_size.y }, pink);
-	world.add_component<movement_bounds>(cart, glm::vec2{ -4.f, 0.f }, glm::vec2{ 4.f, 0.f });
+    world.add_component<rectangle>(cart, cart_size, pink);
+    world.add_component<oobb_collider>(cart, cart_size);
 
 	pole = world.create_entity();
 	world.add_component<transform>(pole, pole_pos, pole_rotation);
 	world.add_component<uses_gravity>(pole);
 	world.add_component<rigidbody>(pole, rigidbody{ 0.1f, glm::vec2{ 0.f }, glm::vec2{ 0.f }, pole_inertia, 0.f, 0.f, 0.f });
-	world.add_component<rectangle>(pole, sf::Vector2f{ pole_size.x, pole_size.y }, white);
+	world.add_component<rectangle>(pole, pole_size, white);
 
+    entity ground = world.create_entity();
+	world.add_component<transform>(ground, glm::vec2{ 0.f, -3.f }, 0.f);
+    world.add_component<rectangle>(ground, glm::vec2{ 6.f, 6.f }, grey);
+    
 	const entity hinge = world.create_entity();
 	world.add_component<joint>(hinge, joint{ cart, pole, glm::vec2{ 0.f, cart_size.y * 0.5f }, glm::vec2{ 0.f, -pole_size.y * 0.5f } });
 }
@@ -65,7 +71,7 @@ float cartpole::step(const float dt, const int action)
     ASSERT(action == 0 || action == 1, return 0.f, "Expected discrete action to be 0 or 1 (left/right)");
 
     const float force = (action == 0) ? -10.f : 10.f;
-    world.get_component<rigidbody>(cart).force += force;
+    world.get_component<rigidbody>(cart).force += glm::vec2{ force, 0 };
 
     physics_step(dt, world);
 

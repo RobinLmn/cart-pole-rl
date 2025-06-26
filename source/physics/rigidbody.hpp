@@ -4,12 +4,6 @@
 
 struct uses_gravity {};
 
-struct movement_bounds
-{
-    glm::vec2 min;
-    glm::vec2 max;
-};
-
 struct rigidbody
 {
     float mass;

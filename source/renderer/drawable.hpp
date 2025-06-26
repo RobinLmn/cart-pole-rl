@@ -1,18 +1,17 @@
 #pragma once
 
-#include <SFML/System/Vector2.hpp>
-#include <SFML/Graphics/Color.hpp>
+#include <glm/glm.hpp>
 
 struct material
 {
-    sf::Color fill_color;
-    sf::Color outline_color;
+    glm::vec<4, uint8_t> fill_color;
+    glm::vec<4, uint8_t> outline_color;
     float outline_thickness;
 };
 
 struct rectangle
 {
-    sf::Vector2f size;
+    glm::vec2 size;
     material material;
 };
 

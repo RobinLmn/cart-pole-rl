@@ -24,13 +24,13 @@ void renderer::draw(const world& world) const
 
     for (const auto& [entity, transform, rectangle] : world.view<const transform, const rectangle>())
     {
-        sf::RectangleShape shape(rectangle.size);
+        sf::RectangleShape shape{ { rectangle.size.x, rectangle.size.y } };
         shape.setOrigin({ rectangle.size.x * 0.5f, rectangle.size.y * 0.5f });
         shape.setPosition({ transform.position.x, transform.position.y });
         shape.setRotation(sf::radians(transform.rotation));
 
-        shape.setFillColor(rectangle.material.fill_color);
-        shape.setOutlineColor(rectangle.material.outline_color);
+        shape.setFillColor({ rectangle.material.fill_color.r, rectangle.material.fill_color.g, rectangle.material.fill_color.b, rectangle.material.fill_color.a });
+        shape.setOutlineColor({ rectangle.material.outline_color.r, rectangle.material.outline_color.g, rectangle.material.outline_color.b, rectangle.material.outline_color.a });
         shape.setOutlineThickness(-rectangle.material.outline_thickness * 0.01f);
         
         target->draw(shape);
@@ -41,8 +41,8 @@ void renderer::draw(const world& world) const
         sf::CircleShape sf_circle{ circle.radius };
         sf_circle.setOrigin({ circle.radius, circle.radius });
         sf_circle.setPosition({ transform.position.x, transform.position.y });
-        sf_circle.setFillColor(circle.material.fill_color);
-        sf_circle.setOutlineColor(circle.material.outline_color);
+        sf_circle.setFillColor({ circle.material.fill_color.r, circle.material.fill_color.g, circle.material.fill_color.b, circle.material.fill_color.a });
+        sf_circle.setOutlineColor({ circle.material.outline_color.r, circle.material.outline_color.g, circle.material.outline_color.b, circle.material.outline_color.a });
         sf_circle.setOutlineThickness(-circle.material.outline_thickness * 0.01f);
 
         target->draw(sf_circle);
