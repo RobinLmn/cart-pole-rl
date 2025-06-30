@@ -6,16 +6,16 @@
 
 #include <numeric>
 
-trainer::trainer(environment* env, const int episodes, const int batch_size)
+trainer::trainer(::environment* environment, ::agent* agent, const int episodes, const int batch_size)
     : episode_count{ episodes }
     , batch_size{ batch_size }
-    , agent{ env->create_agent() }
     , current_episode{ 1 }
     , episode_reward{ 0.f }
     , batch_rewards{}
-    , env{ env }
+    , agent{ agent }
+    , environment{ environment }
 {
-    env->reset();
+    environment->reset();
 }
 
 void trainer::train(const float dt)
@@ -25,15 +25,15 @@ void trainer::train(const float dt)
 
 bool trainer::step(const float dt)
 {
-    const std::vector<float>& state = env->get_state();
-    const int action = agent.act(state);
+    const std::vector<float>& state = environment->get_state();
+    const action& action = agent->act(state);
 
-    const float reward = env->step(dt, action);
+    const float reward = environment->step(dt, action);
     episode_reward += reward;
 
-    agent.store_transition({ state, action, reward, env->is_done() });
+    agent->store_transition({ state, action, reward, environment->is_done() });
 
-    if (!env->is_done())
+    if (!environment->is_done())
     {
         return false;
     }
@@ -42,7 +42,7 @@ bool trainer::step(const float dt)
 
     if (current_episode % batch_size == 0)
     {
-        agent.learn();
+        agent->learn();
         const float avg_reward = std::accumulate(batch_rewards.begin(), batch_rewards.end(), 0.f) / batch_rewards.size();
         LOG_INFO("Batch {} (Episode {}): avg reward = {:.2f}", current_episode / batch_size, current_episode, avg_reward);
         batch_rewards.clear();
@@ -50,7 +50,7 @@ bool trainer::step(const float dt)
 
     current_episode++;
 
-    env->reset();
+    environment->reset();
     episode_reward = 0;
 
     return current_episode > episode_count;

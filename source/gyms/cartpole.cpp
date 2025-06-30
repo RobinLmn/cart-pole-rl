@@ -66,11 +66,14 @@ bool cartpole::is_done() const
     return std::abs(cart_x) > cart_limit || std::abs(pole_angle) > angle_limit;
 }
 
-float cartpole::step(const float dt, const int action)
+float cartpole::step(const float dt, const action& action)
 {
-    ASSERT(action == 0 || action == 1, return 0.f, "Expected discrete action to be 0 or 1 (left/right)");
+    ASSERT(std::holds_alternative<int>(action), return 0.f, "Expected discrete action for cartpole (left/right).")
 
-    const float force = (action == 0) ? -10.f : 10.f;
+    const int index = std::get<int>(action);
+    ASSERT(index == 0 || index == 1, return 0.f, "Expected discrete action to be 0 or 1 (left/right)");
+
+    const float force = (index == 0) ? -10.f : 10.f;
     world.get_component<rigidbody>(cart).force += glm::vec2{ force, 0 };
 
     physics_step(dt, world);
@@ -88,7 +91,7 @@ std::vector<float> cartpole::get_state() const
     return { cart_x, cart_velocity, pole_angle, pole_angular_velocity };
 }
 
-agent cartpole::create_agent() const
+reinforce_agent create_reinforce_cartpole_agent()
 {
     neural_network nn;
 
@@ -99,5 +102,5 @@ agent cartpole::create_agent() const
     static constexpr float gamma = 0.99f;
     static constexpr float learning_rate = 0.001f;
 
-    return agent{ nn, gamma, learning_rate };
+    return reinforce_agent{ nn, gamma, learning_rate };
 }

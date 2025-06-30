@@ -10,11 +10,11 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Window.hpp>
 
-void application::run(environment* env, const int episodes, const int batch_size, const float dt)
+void application::run(environment* environment, agent* agent, const int episodes, const int batch_size, const float dt)
 {
     sf::RenderWindow window{ sf::VideoMode{ { 1920, 1080 } }, "Cart-Pole RL" };
 	renderer renderer{ window };
-	trainer trainer{ env, episodes, batch_size };
+	trainer trainer{ environment, agent, episodes, batch_size };
 
 	sf::Clock clock;
 	float accumulator = 0.0f;
@@ -43,7 +43,7 @@ void application::run(environment* env, const int episodes, const int batch_size
 			}
 		}
 
-		renderer.draw(env->get_world());
+		renderer.draw(environment->get_world());
 		window.display();
 	}
 }

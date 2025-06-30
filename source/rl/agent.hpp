@@ -1,13 +1,14 @@
 #pragma once
 
-#include "rl/neural_network.hpp"
-
 #include <vector>
+#include <variant>
+
+using action = std::variant<int, std::vector<float>>;
 
 struct transition
 {
     std::vector<float> state;
-    int action;
+    action action;
     float reward;
     bool done;
 };
@@ -15,21 +16,11 @@ struct transition
 class agent
 {
 public:
-    agent(const neural_network& policy, const float gamma, const float learning_rate);
-    
-public:
-    [[nodiscard]] int act(const std::vector<float>& state) const;
+    [[nodiscard]] virtual action act(const std::vector<float>& state) const = 0;
+    virtual void learn() = 0;
 
-    void learn();
     void store_transition(const transition& transition);
 
-    void save(const char* filename) const;
-    void load(const char* filename);
-
-private:
-    neural_network policy;
+protected:
     std::vector<transition> transitions;
-
-    float gamma; // discount factor
-    float learning_rate;
 };
