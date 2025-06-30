@@ -3,9 +3,6 @@
 #include "rl/neural_network.hpp"
 
 #include <vector>
-#include <variant>
-
-using action_function = std::function<int(const std::vector<float>& logits)>;
 
 struct transition
 {
@@ -25,6 +22,9 @@ public:
 
     void learn();
     void store_transition(const transition& transition);
+
+    void save(const char* filename) const;
+    void load(const char* filename);
 
 private:
     neural_network policy;

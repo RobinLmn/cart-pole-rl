@@ -92,15 +92,9 @@ agent cartpole::create_agent() const
 {
     neural_network nn;
 
-    activation_function relu_activation = [](const Eigen::MatrixXf& x) { return x.array().cwiseMax(0.0f); };
-    activation_function relu_derivative = [](const Eigen::MatrixXf& x) { return (x.array() > 0.0f).cast<float>(); };
-
-    activation_function identity = [](const Eigen::MatrixXf& x) { return x; };
-    activation_function identity_deriv = [](const Eigen::MatrixXf& x) { return Eigen::MatrixXf::Ones(x.rows(), x.cols()); };
-
-    nn.add_layer(layer{ 4, 128, relu_activation, relu_derivative });
-    nn.add_layer(layer{ 128, 64, relu_activation, relu_derivative });
-    nn.add_layer(layer{ 64, 2, identity, identity_deriv });
+    nn.add_layer(layer{ 4, 128, "relu" });
+    nn.add_layer(layer{ 128, 64, "relu" });
+    nn.add_layer(layer{ 64, 2, "identity" });
 
     static constexpr float gamma = 0.99f;
     static constexpr float learning_rate = 0.001f;

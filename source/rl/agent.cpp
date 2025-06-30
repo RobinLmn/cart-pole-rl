@@ -87,3 +87,13 @@ void agent::store_transition(const transition& transition)
 {
     transitions.emplace_back(transition);
 }
+
+void agent::save(const char* filename) const
+{
+    policy.save(filename);
+}
+
+void agent::load(const char* filename)
+{
+    policy.load(filename);
+}
