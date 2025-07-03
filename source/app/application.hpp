@@ -6,5 +6,6 @@ class agent;
 class application
 {
 public:
-    void run(environment* environment, agent* agent, const int episodes, const int batch_size, const float dt);
+    void train(environment* environment, agent* agent, const int episodes, const int batch_size, const float dt);
+    void replay(environment* environment, agent* agent, const float dt);
 };

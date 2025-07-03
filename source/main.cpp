@@ -7,31 +7,57 @@
 
 #include <iostream>
 
+enum class mode
+{
+	training,
+	headless_training,
+	replay	
+};
+
 int main()
 {
-#ifdef DEBUG
+#ifdef LOG
 	logger::initialize();
 #endif
 
 	cartpole cartpole;
 	reinforce_agent cartpole_agent = create_reinforce_cartpole_agent();
 
-	static constexpr bool headless = true;
+	static constexpr mode playmode = mode::headless_training;
+	
 	static constexpr float dt = 1.f / 60.f;
 	static constexpr int episodes = 1000;
 	static constexpr int batch_size = 10;
 
-	if constexpr (headless)
+	switch(playmode)
+	{
+	case mode::training:
+	{
+		application app;
+		app.train(&cartpole, &cartpole_agent, episodes, batch_size, dt);
+
+		break;
+	}
+	case mode::headless_training:
 	{
 		trainer trainer{ &cartpole, &cartpole_agent, episodes, batch_size };
 		trainer.train(dt);
 
 		LOG_INFO("Training Complete. Press Enter to exit.");
 		std::cin.get();
+
+		break;
 	}
-	else
+	case mode::replay:
 	{
+		cartpole_agent.load("models/reinforce_baseline.mdl");
+
 		application app;
-		app.run(&cartpole, &cartpole_agent, episodes, batch_size, dt);
+		app.replay(&cartpole, &cartpole_agent, dt);
+
+		break;
 	}
+	}
+
+	cartpole_agent.save("models/reinforce_baseline.mdl");
 }
