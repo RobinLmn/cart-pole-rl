@@ -16,7 +16,7 @@ enum class mode
 
 int main()
 {
-#ifdef LOG
+#ifdef LOG_ON
 	logger::initialize();
 #endif
 
@@ -25,9 +25,9 @@ int main()
 
 	static constexpr mode playmode = mode::headless_training;
 	
-	static constexpr float dt = 1.f / 60.f;
-	static constexpr int episodes = 1000;
-	static constexpr int batch_size = 10;
+	static constexpr float dt = 0.02f;
+	static constexpr int episodes = 1024;
+	static constexpr int batch_size = 32;
 
 	switch(playmode)
 	{
@@ -44,7 +44,10 @@ int main()
 		trainer.train(dt);
 
 		LOG_INFO("Training Complete. Press Enter to exit.");
+
+#ifndef RELEASE
 		std::cin.get();
+#endif
 
 		break;
 	}

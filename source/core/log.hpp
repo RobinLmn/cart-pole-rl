@@ -8,7 +8,6 @@
 #include <spdlog/fmt/ostr.h>
 #endif
 
-
 class logger
 {
 public:

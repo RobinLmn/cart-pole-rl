@@ -90,7 +90,7 @@ project "cart-pole-rl"
 			"sfml-system-s-d"
 		}
 		
-		defines {"DEBUG", "LOG_ON", "ASSERT_ON"}
+		defines {"LOG_ON", "ASSERT_ON"}
 		runtime "Debug"
 		symbols "on"
 	
@@ -102,7 +102,7 @@ project "cart-pole-rl"
 			"sfml-system-s"
 		}
 
-		defines {"RELEASE", "LOG_ON", "ASSERT_ON"}
+		defines {"LOG_ON", "ASSERT_ON"}
 		runtime "Release"
 		optimize "on"
 
