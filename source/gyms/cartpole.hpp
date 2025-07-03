@@ -6,7 +6,7 @@
 class cartpole final : public environment
 {
 public:
-    [[nodiscard]] float step(const float dt, const action& action) override;
+    float step(const float dt, const action& action) override;
 
     void reset() override;
 
