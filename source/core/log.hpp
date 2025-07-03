@@ -1,6 +1,6 @@
 #pragma once
 
-#ifdef DEBUG
+#ifdef LOG_ON
 #pragma warning(disable:4996)
 #include <spdlog/spdlog.h>
 #pragma warning(default:4996)
@@ -15,12 +15,12 @@ public:
 	static void initialize();
 
 public:
-#ifdef DEBUG
+#ifdef LOG_ON
 	static std::shared_ptr<spdlog::logger> spd_logger;
 #endif
 };
 
-#ifdef DEBUG
+#ifdef LOG_ON
 #define LOG_ERROR(...) logger::spd_logger->error(__VA_ARGS__)
 #define LOG_WARN(...)  logger::spd_logger->warn(__VA_ARGS__)
 #define LOG_INFO(...)  logger::spd_logger->info(__VA_ARGS__)
@@ -32,7 +32,7 @@ public:
 #define LOG_TRACE(...)	
 #endif
 
-#ifdef DEBUG
+#ifdef ASSERT_ON
 #define ASSERT(expression, exit_path, ...) if (!(expression)) { LOG_ERROR("Assertion failed: [{}] File [{}] Line [{}]\n{}", #expression, __FILE__, __LINE__, fmt::format(__VA_ARGS__)); __debugbreak(); exit_path; }
 #define ASSERT_FATAL(expression, ...) if (!(expression)) { LOG_ERROR("Fatal assertion failed: [{}] File [{}] Line [{}]\n{}", #expression, __FILE__, __LINE__, fmt::format(__VA_ARGS__)); __debugbreak(); abort(); }
 #else

@@ -2,13 +2,13 @@
 
 #include <spdlog/sinks/stdout_color_sinks.h>
 
-#ifdef DEBUG
+#ifdef LOG_ON
 std::shared_ptr<spdlog::logger> logger::spd_logger;
 #endif
 
 void logger::initialize()
 {
-#ifdef DEBUG
+#ifdef LOG_ON
 	spdlog::set_pattern("%^[%T] %n: %v%$");
 
 	spd_logger = spdlog::stdout_color_mt("Log:");

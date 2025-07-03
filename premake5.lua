@@ -5,6 +5,7 @@ workspace "cart-pole-rl"
 	configurations
 	{
 		"debug",
+		"assert",
 		"release",
 		"profile",
 	}
@@ -89,10 +90,22 @@ project "cart-pole-rl"
 			"sfml-system-s-d"
 		}
 		
-		defines {"DEBUG"}
+		defines {"DEBUG", "LOG_ON", "ASSERT_ON"}
 		runtime "Debug"
 		symbols "on"
 	
+	filter "configurations:assert"
+		links 
+		{
+			"sfml-graphics-s",
+			"sfml-window-s",
+			"sfml-system-s"
+		}
+
+		defines {"RELEASE", "LOG_ON", "ASSERT_ON"}
+		runtime "Release"
+		optimize "on"
+
 	filter "configurations:release"
 		links 
 		{
