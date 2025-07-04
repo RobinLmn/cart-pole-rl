@@ -1,19 +1,25 @@
 #pragma once
 
-#include "rl/environment.hpp"
+#include "world/world.hpp"
+
+#include "rl/transition.hpp"
 #include "rl/reinforce_agent.hpp"
 
-class cartpole final : public environment
+class cartpole_environment
 {
 public:
-    float step(const float dt, const action& action) override;
+    float step(const float dt, const action& action);
 
-    void reset() override;
+    void reset();
 
-    [[nodiscard]] bool is_done() const override;
-    [[nodiscard]] std::vector<float> get_state() const override;
+    [[nodiscard]] bool is_done() const;
+    [[nodiscard]] std::vector<float> get_state() const;
+
+    const world& get_world() const { return world; }
 
 private:
+    world world;
+
     entity cart;
     entity pole;
 };

@@ -3,9 +3,6 @@
 #include "core/log.hpp"
 #include "core/utils.hpp"
 
-#include "rl/agent.hpp"
-
-#include "renderer/renderer.hpp"
 #include "renderer/drawable.hpp"
 
 #include "world/transform.hpp"
@@ -22,9 +19,9 @@ static constexpr float angle_limit = 12.f * 3.1415f / 180.0f;
 static constexpr float cart_vel_heuristic = 2.0f;
 static constexpr float pole_vel_heuristic = 2.0f;
 
-void cartpole::reset()
+void cartpole_environment::reset()
 {
-    environment::reset();
+    world.clear();
 
     static constexpr material pink{ { 215, 43, 122, 128 }, { 215, 43, 122, 255 }, 4.f };
 	static constexpr material white{ { 255, 255, 255, 255 }, { 255, 255, 255, 255 }, 0.f };
@@ -58,7 +55,7 @@ void cartpole::reset()
 	world.add_component<joint>(hinge, joint{ cart, pole, glm::vec2{ 0.f, cart_size.y * 0.5f }, glm::vec2{ 0.f, -pole_size.y * 0.5f } });
 }
 
-bool cartpole::is_done() const
+bool cartpole_environment::is_done() const
 {
     const float cart_x = world.get_component<transform>(cart).position.x;
     const float pole_angle = world.get_component<transform>(pole).rotation;
@@ -66,7 +63,7 @@ bool cartpole::is_done() const
     return std::abs(cart_x) > cart_limit || std::abs(pole_angle) > angle_limit;
 }
 
-float cartpole::step(const float dt, const action& action)
+float cartpole_environment::step(const float dt, const action& action)
 {
     ASSERT(std::holds_alternative<int>(action), return 0.f, "Expected discrete action for cartpole (left/right).")
 
@@ -81,7 +78,7 @@ float cartpole::step(const float dt, const action& action)
     return 1.f;
 }
 
-std::vector<float> cartpole::get_state() const
+std::vector<float> cartpole_environment::get_state() const
 {
     const float cart_x = world.get_component<transform>(cart).position.x / cart_limit;
     const float cart_velocity = world.get_component<rigidbody>(cart).velocity.x / cart_vel_heuristic;

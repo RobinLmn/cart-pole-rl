@@ -1,18 +1,51 @@
 #include "core/log.hpp"
 
-#include "app/application.hpp"
+#include "app/app.hpp"
 
 #include "rl/trainer.hpp"
 #include "gyms/cartpole.hpp"
 
 #include <iostream>
+	
+static constexpr float dt = 0.02f;
+static constexpr int batches = 32;
+static constexpr int batch_size = 32;
 
-enum class mode
+void replay(const char* filename)
 {
-	training,
-	headless_training,
-	replay	
-};
+	reinforce_agent cartpole_agent = create_reinforce_cartpole_agent();
+	cartpole_agent.load(filename);
+
+	cartpole_environment cartpole_environment;
+	cartpole_environment.reset();
+
+	const auto update = [&cartpole_environment, &cartpole_agent]()
+	{
+		const std::vector<float>& state = cartpole_environment.get_state();
+		const action& action = cartpole_agent.act(state);
+
+		cartpole_environment.step(dt, action);
+
+		if (cartpole_environment.is_done())
+		{
+			cartpole_environment.reset();
+		}
+	};
+
+	app::run(cartpole_environment.get_world(), dt, update);
+}
+
+void headless_training()
+{
+	reinforce_agent cartpole_agent = create_reinforce_cartpole_agent();
+	trainer::train<cartpole_environment>(cartpole_agent, dt, batches, batch_size, 0);
+
+	LOG_INFO("Training Complete. Press Enter to exit.");
+
+#ifndef RELEASE
+	std::cin.get();
+#endif
+}
 
 int main()
 {
@@ -20,47 +53,6 @@ int main()
 	logger::initialize();
 #endif
 
-	cartpole cartpole;
-	reinforce_agent cartpole_agent = create_reinforce_cartpole_agent();
-
-	static constexpr mode playmode = mode::headless_training;
-	
-	static constexpr float dt = 0.02f;
-	static constexpr int episodes = 1024;
-	static constexpr int batch_size = 32;
-
-	switch(playmode)
-	{
-	case mode::training:
-	{
-		application app;
-		app.train(&cartpole, &cartpole_agent, episodes, batch_size, dt);
-
-		break;
-	}
-	case mode::headless_training:
-	{
-		trainer trainer{ &cartpole, &cartpole_agent, episodes, batch_size };
-		trainer.train(dt);
-
-		LOG_INFO("Training Complete. Press Enter to exit.");
-
-#ifndef RELEASE
-		std::cin.get();
-#endif
-
-		break;
-	}
-	case mode::replay:
-	{
-		cartpole_agent.load("models/reinforce_baseline.mdl");
-
-		application app;
-		app.replay(&cartpole, &cartpole_agent, dt);
-
-		break;
-	}
-	}
-
-	cartpole_agent.save("models/reinforce_baseline.mdl");
-}
+	// replay("models/reinforce_baseline.mdl");
+	headless_training();
+};

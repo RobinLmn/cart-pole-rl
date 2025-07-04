@@ -6,8 +6,9 @@
 #include <glm/glm.hpp>
 #include <Eigen/Dense>
 
-reinforce_agent::reinforce_agent(const neural_network& policy, const float gamma, const float learning_rate)
-    : policy{ std::move(policy) }
+reinforce_agent::reinforce_agent(const neural_network& policy, const float gamma, const float learning_rate, const bool use_baseline)
+    : use_baseline{ use_baseline }
+    , policy{ policy }
     , gamma{ gamma }
     , learning_rate{ learning_rate }
 {
@@ -23,7 +24,7 @@ action reinforce_agent::act(const std::vector<float>& state) const
     return action;
 }
 
-void reinforce_agent::learn()
+void reinforce_agent::learn(const std::vector<transition>& transitions)
 {
     const int transition_size = static_cast<int>(transitions.size());
     ASSERT(transition_size != 0, return, "No episodes to learn from.");
@@ -42,9 +43,12 @@ void reinforce_agent::learn()
         returns[t] = G;
     }
 
-    // Calculate advantages by subtracting a baseline (the mean of returns)
-    const float baseline = returns.mean();
-    returns = returns.array() - baseline;
+    if (use_baseline)
+    {
+        // Calculate advantages by subtracting a baseline (the mean of returns)
+        const float baseline = returns.mean();
+        returns = returns.array() - baseline;
+    }
 
     // Normalize the returns
     const float stddev = glm::sqrt((returns.array()).square().mean());
@@ -80,8 +84,6 @@ void reinforce_agent::learn()
 
         policy.backward(gradient, learning_rate);
     }
-
-    transitions.clear();
 }
 
 void reinforce_agent::save(const char* filename) const
