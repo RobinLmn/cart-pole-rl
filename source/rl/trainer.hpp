@@ -5,7 +5,6 @@
 
 #include <vector>
 #include <thread>
-#include <numeric>
 
 template<typename environment_type>
 concept environment_concept = std::default_initializable<environment_type> && requires(environment_type environment) {
@@ -27,12 +26,12 @@ public:
     template<environment_concept environment_type, agent_concept agent_type>
     static void step(environment_type& environment, agent_type& agent, const float dt, std::vector<transition>& transitions);
 
-    template<environment_concept environment_type, agent_concept agent_type>
-    static void train(agent_type& agent, const float dt, const int batch_count, const int episodes_per_batch, const int learning_step_batch_size);
+    template<environment_concept environment_type, agent_concept agent_type, typename functor>
+    static void train(agent_type& agent, const float dt, const int batch_count, const int episodes_per_batch, const int learning_step_batch_size, functor&& on_learn);
 };
 
-template<environment_concept environment_type, agent_concept agent_type>
-void trainer::train(agent_type& agent, const float dt, const int batch_count, const int episodes_per_batch, const int learning_step_batch_size)
+template<environment_concept environment_type, agent_concept agent_type, typename functor>
+void trainer::train(agent_type& agent, const float dt, const int batch_count, const int episodes_per_batch, const int learning_step_batch_size, functor&& on_learn)
 {
     const auto are_environments_done = [](const std::vector<environment_type>& environments) -> bool
     {
@@ -92,13 +91,7 @@ void trainer::train(agent_type& agent, const float dt, const int batch_count, co
             if (learning_step_batch_size > 0 && learning_step % learning_step_batch_size == 0)
             {
                 const std::vector<transition>& transitions = merge_transitions();
-
-#ifdef LOG_ON
-                const float total_reward = std::accumulate(transitions.begin(), transitions.end(), 0.0f, [](float sum, const transition& transition) { return sum + transition.reward; });
-                const float average_reward = transitions.empty() ? 0.0f : total_reward / episodes_per_batch;
-                LOG_INFO("Batch {}, Step {}: Average Reward: {:.2f}", batch_index + 1, learning_step, average_reward);
-#endif
-
+                on_learn(transitions, batch_index, learning_step);
                 agent.learn(transitions);
             }
         }
@@ -106,12 +99,7 @@ void trainer::train(agent_type& agent, const float dt, const int batch_count, co
         if (learning_step_batch_size <= 0 || learning_step % learning_step_batch_size != 0)
         {
                 const std::vector<transition>& transitions = merge_transitions();
-#ifdef LOG_ON
-                const float total_reward = std::accumulate(transitions.begin(), transitions.end(), 0.0f, [](float sum, const transition& transition) { return sum + transition.reward; });
-                const float average_reward = transitions.empty() ? 0.0f : total_reward / episodes_per_batch;
-                LOG_INFO("Batch {}: Average Reward: {:.2f}", batch_index + 1, average_reward);
-#endif
-
+                on_learn(transitions, batch_index, learning_step);
                 agent.learn(transitions);
         }
     }
