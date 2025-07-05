@@ -63,14 +63,11 @@ bool cartpole_environment::is_done() const
     return std::abs(cart_x) > cart_limit || std::abs(pole_angle) > angle_limit;
 }
 
-float cartpole_environment::step(const float dt, const action& action)
+float cartpole_environment::step(const float dt, const int action)
 {
-    ASSERT(std::holds_alternative<int>(action), return 0.f, "Expected discrete action for cartpole (left/right).")
+    ASSERT(action == 0 || action == 1, return 0.f, "Expected discrete action to be 0 or 1 (left/right)");
 
-    const int index = std::get<int>(action);
-    ASSERT(index == 0 || index == 1, return 0.f, "Expected discrete action to be 0 or 1 (left/right)");
-
-    const float force = (index == 0) ? -10.f : 10.f;
+    const float force = (action == 0) ? -10.f : 10.f;
     world.get_component<rigidbody>(cart).force += glm::vec2{ force, 0 };
 
     physics_step(dt, world);
@@ -78,14 +75,14 @@ float cartpole_environment::step(const float dt, const action& action)
     return 1.f;
 }
 
-std::vector<float> cartpole_environment::get_state() const
+Eigen::VectorXf cartpole_environment::get_state() const
 {
     const float cart_x = world.get_component<transform>(cart).position.x / cart_limit;
     const float cart_velocity = world.get_component<rigidbody>(cart).velocity.x / cart_vel_heuristic;
     const float pole_angle = world.get_component<transform>(pole).rotation / angle_limit;
     const float pole_angular_velocity = world.get_component<rigidbody>(pole).angular_velocity / pole_vel_heuristic;
 
-    return { cart_x, cart_velocity, pole_angle, pole_angular_velocity };
+    return Eigen::Vector4f{ cart_x, cart_velocity, pole_angle, pole_angular_velocity };
 }
 
 reinforce_agent create_reinforce_cartpole_agent()

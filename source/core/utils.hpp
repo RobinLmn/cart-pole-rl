@@ -17,3 +17,5 @@
 [[nodiscard]] Eigen::VectorXf softmax(const Eigen::VectorXf& x);
 
 [[nodiscard]] int sample_from_distribution(const Eigen::VectorXf& probs);
+
+[[nodiscard]] Eigen::VectorXf flatten(const std::vector<Eigen::VectorXf>& data);

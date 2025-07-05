@@ -1,14 +1,15 @@
 #pragma once
 
 #include <vector>
-#include <variant>
 
-using action = std::variant<int, std::vector<float>>;
+#include <Eigen/Dense>
 
 struct transition
 {
-    std::vector<float> state;
-    action action;
-    float reward;
     bool done;
+    int action;
+    float reward;
+    Eigen::VectorXf state;
 };
+
+using episode = std::vector<transition>;

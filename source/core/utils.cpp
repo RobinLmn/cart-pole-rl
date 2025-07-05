@@ -1,6 +1,7 @@
 #include "core/utils.hpp"
 
 #include <random>
+#include <numeric>
 
 Eigen::VectorXf eigen(const std::vector<float>& v)
 {
@@ -52,4 +53,19 @@ int sample_from_distribution(const Eigen::VectorXf& probs)
     static thread_local std::mt19937 gen(std::random_device{}());
     std::discrete_distribution<int> dist(probs.data(), probs.data() + probs.size());
     return dist(gen);
+}
+
+Eigen::VectorXf flatten(const std::vector<Eigen::VectorXf>& data)
+{
+    const int size =  std::accumulate(data.begin(), data.end(), 0, [](int sum, const Eigen::VectorXf& vec) { return sum + static_cast<int>(vec.size()); });
+    Eigen::VectorXf flat(size);
+
+    int offset = 0;
+    for (const Eigen::VectorXf& vec : data)
+    {
+        flat.segment(offset, vec.size()) = vec;
+        offset += static_cast<int>(vec.size());
+    }
+
+    return flat;
 }

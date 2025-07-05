@@ -1,19 +1,19 @@
 #pragma once
 
+#include "rl/reinforce_agent.hpp"
 #include "world/world.hpp"
 
-#include "rl/transition.hpp"
-#include "rl/reinforce_agent.hpp"
+#include <Eigen/Dense>
 
 class cartpole_environment
 {
 public:
-    float step(const float dt, const action& action);
+    float step(const float dt, const int action);
 
     void reset();
 
     [[nodiscard]] bool is_done() const;
-    [[nodiscard]] std::vector<float> get_state() const;
+    [[nodiscard]] Eigen::VectorXf get_state() const;
 
     const world& get_world() const { return world; }
 

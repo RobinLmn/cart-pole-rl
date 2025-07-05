@@ -4,28 +4,24 @@
 #include "core/log.hpp"
 
 #include <vector>
-#include <thread>
 
 template<typename environment_type>
 concept environment_concept = std::default_initializable<environment_type> && requires(environment_type environment) {
     { environment.reset() } -> std::same_as<void>;
     { environment.is_done() } -> std::convertible_to<bool>;
-    { environment.get_state() } -> std::same_as<std::vector<float>>;
-    { environment.step(std::declval<float>(), std::declval<action>()) } -> std::convertible_to<float>;
+    { environment.get_state() } -> std::same_as<Eigen::VectorXf>;
+    { environment.step(std::declval<float>(), std::declval<int>()) } -> std::convertible_to<float>;
 };
 
 template<typename agent_type>
 concept agent_concept = requires(agent_type agent) {
-    { agent.act(std::declval<std::vector<float>>()) } -> std::same_as<action>;
-    { agent.learn(std::declval<std::vector<transition>>()) } -> std::same_as<void>;
+    { agent.act(std::declval<Eigen::VectorXf>()) } -> std::same_as<int>;
+    { agent.learn(std::declval<std::vector<episode>>()) } -> std::same_as<void>;
 };
 
 class trainer
 {
 public:
-    template<environment_concept environment_type, agent_concept agent_type>
-    static void step(environment_type& environment, agent_type& agent, const float dt, std::vector<transition>& transitions);
-
     template<environment_concept environment_type, agent_concept agent_type, typename functor>
     static void train(agent_type& agent, const float dt, const int batch_count, const int episodes_per_batch, const int learning_step_batch_size, functor&& on_learn);
 };
@@ -35,10 +31,7 @@ void trainer::train(agent_type& agent, const float dt, const int batch_count, co
 {
     const auto are_environments_done = [](const std::vector<environment_type>& environments) -> bool
     {
-        return std::all_of(environments.begin(), environments.end(), [](const environment_type& environment)
-        {
-            return environment.is_done();
-        });
+        return std::ranges::all_of(environments, &environment_type::is_done);
     };
 
     std::vector<environment_type> environments(episodes_per_batch);
@@ -52,25 +45,10 @@ void trainer::train(agent_type& agent, const float dt, const int batch_count, co
 
         int learning_step = 0;
 
-        std::vector<std::vector<transition>> transitions_per_episode(episodes_per_batch);
-
-        const auto merge_transitions = [&transitions_per_episode]() -> std::vector<transition> 
-        {
-            std::vector<transition> transitions;
-            for (const std::vector<transition>& episode_transitions : transitions_per_episode) 
-            {
-                transitions.insert(transitions.end(), episode_transitions.begin(), episode_transitions.end());
-            }
-            
-            transitions_per_episode.clear();
-            return transitions;
-        };
+        std::vector<episode> episodes(episodes_per_batch);
 
         while (!are_environments_done(environments))
         {
-            std::vector<std::thread> threads;
-            threads.reserve(episodes_per_batch);
-
             for (int episode_index = 0; episode_index < episodes_per_batch; ++episode_index)
             {
                 if (environments[episode_index].is_done())
@@ -78,40 +56,39 @@ void trainer::train(agent_type& agent, const float dt, const int batch_count, co
                     continue;
                 }
 
-                threads.emplace_back([&, episode_index]() { step(environments[episode_index], agent, dt, transitions_per_episode[episode_index]); });
+                environment_type& environment = environments[episode_index];
+
+                const Eigen::VectorXf& state = environment.get_state();
+                const int action = agent.act(state);
+
+                const float reward = environment.step(dt, action);
+
+                episodes[episode_index].emplace_back(environment.is_done(), action, reward, state);
             }
         
-            for (std::thread& thread : threads)
-            {
-                thread.join();
-            }
-
             learning_step++;
 
             if (learning_step_batch_size > 0 && learning_step % learning_step_batch_size == 0)
             {
-                const std::vector<transition>& transitions = merge_transitions();
-                on_learn(transitions, batch_index, learning_step);
-                agent.learn(transitions);
+                agent.learn(episodes);
+                on_learn(episodes, batch_index, learning_step);
+
+                for (episode& episode : episodes)
+                {
+                    episode.clear();
+                }
             }
         }
 
         if (learning_step_batch_size <= 0 || learning_step % learning_step_batch_size != 0)
         {
-                const std::vector<transition>& transitions = merge_transitions();
-                on_learn(transitions, batch_index, learning_step);
-                agent.learn(transitions);
+            agent.learn(episodes);
+            on_learn(episodes, batch_index, learning_step);
+
+            for (episode& episode : episodes)
+            {
+                episode.clear();
+            }
         }
     }
-}
-
-template<environment_concept environment_type, agent_concept agent_type>
-void trainer::step(environment_type& environment, agent_type& agent, const float dt, std::vector<transition>& transitions)
-{
-    const std::vector<float>& state = environment.get_state();
-    const action& action = agent.act(state);
-
-    const float reward = environment.step(dt, action);
-
-    transitions.emplace_back(state, action, reward, environment.is_done());
 }

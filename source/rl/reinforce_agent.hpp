@@ -8,18 +8,16 @@
 class reinforce_agent
 {
 public:
-    reinforce_agent(const neural_network& policy, const float gamma, const float learning_rate, const bool use_baseline = true);
+    reinforce_agent(const neural_network& policy, const float gamma, const float learning_rate);
     
 public:
-    [[nodiscard]] action act(const std::vector<float>& state) const;
-    void learn(const std::vector<transition>& transitions);
+    [[nodiscard]] int act(const Eigen::VectorXf& state) const;
+    void learn(const std::vector<episode>& episodes);
 
     void save(const char* filename) const;
     void load(const char* filename);
 
 private:
-    bool use_baseline;
-
     neural_network policy;
 
     float gamma; // discount factor
