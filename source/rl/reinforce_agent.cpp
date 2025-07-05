@@ -30,6 +30,7 @@ void reinforce_agent::learn(const std::vector<episode>& episodes)
     std::vector<Eigen::VectorXf> returns;
     returns.reserve(episode_count);
 
+    // Compute discounted returns
     for (const episode& episode : episodes)
     {
         const int episode_length = static_cast<int>(episode.size());
@@ -63,6 +64,10 @@ void reinforce_agent::learn(const std::vector<episode>& episodes)
         }
     }
 
+    // Accumulate gradients with REINFORCE
+    std::vector<gradient> gradients;
+    float steps = 0.0f;
+
     for (int e = 0; e < episode_count; ++e)
     {
         const episode& episode = episodes[e];
@@ -75,18 +80,32 @@ void reinforce_agent::learn(const std::vector<episode>& episodes)
             const Eigen::VectorXf& logits = policy.forward(state);
             const Eigen::VectorXf& probs = softmax(logits);
 
-            Eigen::VectorXf gradient = -advantage * (Eigen::VectorXf::Unit(probs.size(), action) - probs);
+            Eigen::VectorXf step_gradient = -advantage * (Eigen::VectorXf::Unit(probs.size(), action) - probs);
 
-            static constexpr float max_grad_norm = 0.5f;
-            const float norm = gradient.norm();
-            if (norm > max_grad_norm)
+            const std::vector<gradient>& step_gradients = policy.backward(step_gradient);
+
+            if (gradients.empty()) 
             {
-                gradient = gradient * (max_grad_norm / norm);
+                gradients = step_gradients;
+            } 
+            else
+            {
+                for (int g = 0; g < gradients.size(); ++g)
+                {
+                    gradients[g] += step_gradients[g];
+                }
             }
 
-            policy.backward(gradient, learning_rate);
+            steps += 1.0f;
         }
     }
+
+    for (int g = 0; g < gradients.size(); ++g)
+    {
+        gradients[g] /= steps;
+    }
+
+    policy.gradient_descent(gradients, learning_rate);
 }
 
 void reinforce_agent::save(const char* filename) const

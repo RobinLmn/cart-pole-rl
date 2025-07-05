@@ -6,6 +6,15 @@
 #include <functional>
 #include <vector>
 
+struct gradient
+{
+    Eigen::MatrixXf dW;
+    Eigen::VectorXf dB;
+
+    gradient& operator+=(const gradient& rhs);
+    gradient& operator/=(const float rhs);
+};
+
 class layer
 {
 public:
@@ -13,8 +22,10 @@ public:
     layer(const Eigen::MatrixXf& weights, const Eigen::VectorXf& biases, const char* activation_name);
 
 public:
-    [[nodiscard]] Eigen::MatrixXf forward(const Eigen::MatrixXf& input) const;
-    [[nodiscard]] Eigen::MatrixXf backward(const Eigen::MatrixXf& gradients, const float learning_rate);
+    [[nodiscard]] Eigen::VectorXf forward(const Eigen::VectorXf& input) const;
+    [[nodiscard]] std::pair<gradient, Eigen::VectorXf> backward(const Eigen::VectorXf& gradient) const;
+
+    void gradient_descent(const gradient& gradient, const float learning_rate);
 
     Eigen::MatrixXf get_weights() const;
     Eigen::VectorXf get_biases() const;
@@ -36,7 +47,9 @@ public:
     void add_layer(const layer& layer);
     
     [[nodiscard]] Eigen::VectorXf forward(const Eigen::VectorXf& input) const;
-    void backward(const Eigen::VectorXf& gradients, const float learning_rate);
+    [[nodiscard]] std::vector<gradient> backward(const Eigen::VectorXf& gradients) const;
+
+    void gradient_descent(const std::vector<gradient>& gradients, const float learning_rate);
 
     void save(const char* filename) const;
     void load(const char* filename);

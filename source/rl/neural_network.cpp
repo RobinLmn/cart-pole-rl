@@ -13,30 +13,33 @@ layer::layer(const Eigen::MatrixXf& weights, const Eigen::VectorXf& biases, cons
 
 layer::layer(const int input_dim, const int output_dim, const char* activation_name)
     : activation{ activation_name }
-    , weights{ Eigen::MatrixXf::Random(output_dim, input_dim) * std::sqrt(6.f / (input_dim + output_dim)) } // (output_dim x input_dim)
-    , biases{ Eigen::VectorXf::Zero(output_dim) } // (output_dim x 1)
+    , weights{ Eigen::MatrixXf::Random(output_dim, input_dim) * std::sqrt(6.f / (input_dim + output_dim)) }
+    , biases{ Eigen::VectorXf::Zero(output_dim) }
 {
 }
 
-Eigen::MatrixXf layer::forward(const Eigen::MatrixXf& input) const
+Eigen::VectorXf layer::forward(const Eigen::VectorXf& input) const
 {
     inputs = input;
-    pre_activation = weights * input + biases; // (output_dim x input_dim) * (input_dim x 1) + (output_dim x 1) = (output_dim x 1)
+    pre_activation = weights * input + biases;
+
     return activation.func(pre_activation);
 }
 
-Eigen::MatrixXf layer::backward(const Eigen::MatrixXf& dA, const float learning_rate)
+std::pair<gradient, Eigen::VectorXf> layer::backward(const Eigen::VectorXf& dA) const
 {
-    const Eigen::MatrixXf dZ = dA.array() * activation.derivative(pre_activation).array();  // (output_dim × 1)
-    const Eigen::MatrixXf dW = dZ * inputs.transpose();  // (output_dim × input_dim)
-    const Eigen::VectorXf dB = dZ.col(0);
+    const Eigen::VectorXf dZ = dA.array() * activation.derivative(pre_activation).array();
+    const Eigen::MatrixXf dW = dZ * inputs.transpose();
+    const Eigen::VectorXf dB = dZ;
+    const Eigen::VectorXf dInput = weights.transpose() * dZ;
 
-    const Eigen::MatrixXf dInput = weights.transpose() * dZ;  // (input_dim × 1)
+    return { { dW, dB }, dInput };
+}
 
-    weights -= learning_rate * dW;
-    biases -= learning_rate * dB;
-
-    return dInput;
+void layer::gradient_descent(const gradient& gradient, const float learning_rate)
+{
+    weights -= learning_rate * gradient.dW;
+    biases -= learning_rate * gradient.dB;
 }
 
 Eigen::MatrixXf layer::get_weights() const
@@ -61,22 +64,53 @@ void neural_network::add_layer(const layer& layer)
 
 Eigen::VectorXf neural_network::forward(const Eigen::VectorXf& input) const
 {
-    Eigen::MatrixXf output_matrix = input;
+    Eigen::VectorXf output = input;
     for (const layer& layer : layers)
     {
-        output_matrix = layer.forward(output_matrix);
+        output = layer.forward(output);
     }
 
-    return output_matrix.col(0);
+    return output;
 }
 
-void neural_network::backward(const Eigen::VectorXf& gradients, const float learning_rate)
+std::vector<gradient> neural_network::backward(const Eigen::VectorXf& input_gradient) const
 {
-    Eigen::MatrixXf gradient_matrix = gradients;
-    for (auto layer_it = layers.rbegin(); layer_it != layers.rend(); ++layer_it)
+    std::vector<gradient> gradients(layers.size());
+
+    Eigen::VectorXf dA = input_gradient;
+    for (int i = layers.size() - 1; i >= 0; --i)
     {
-        gradient_matrix = layer_it->backward(gradient_matrix, learning_rate);
+        const auto& [gradient, dInput] = layers[i].backward(dA);
+        gradients[i] = gradient;
+
+        dA = dInput;
     }
+
+    return gradients;
+}
+
+void neural_network::gradient_descent(const std::vector<gradient>& gradients, const float learning_rate)
+{
+    for (int i = 0; i < layers.size(); ++i)
+    {
+        layers[i].gradient_descent(gradients[i], learning_rate);
+    }
+}
+
+gradient& gradient::operator+=(const gradient& rhs)
+{
+    dW += rhs.dW;
+    dB += rhs.dB;
+
+    return *this;
+}
+
+gradient& gradient::operator/=(const float rhs)
+{
+    dW /= rhs;
+    dB /= rhs;
+
+    return *this;
 }
 
 void neural_network::save(const char* filename) const
