@@ -8,10 +8,11 @@
 #include <format>
 #include <iostream>
 #include <numeric>
+#include <fstream>
 	
 static constexpr float dt = 0.02f;
-static constexpr int batches = 64;
-static constexpr int batch_size = 32;
+static constexpr int batches = 10000;
+static constexpr int batch_size = 5;
 static constexpr int learning_step_batch_size = -1;
 
 void replay(const char* filename)
@@ -42,7 +43,10 @@ void train()
 {
 	reinforce_agent cartpole_agent = create_reinforce_cartpole_agent();
 
-	const auto on_learn = [&cartpole_agent](const std::vector<episode>& episodes, const int batch, const int step)
+	std::ofstream csv_file("models/reinforce_baseline/reinforce_baseline_training_reward_per_batch.csv");
+	csv_file << "batch,average_reward\n";
+
+	const auto on_learn = [&cartpole_agent, &csv_file](const std::vector<episode>& episodes, const int batch, const int step)
 	{
 		float total_reward = 0.0f;
 		for (const episode& episode : episodes)
@@ -51,10 +55,14 @@ void train()
 		}
 
 		const float average_reward = episodes.empty() ? 0.0f : total_reward / batch_size;
-		LOG_INFO("Batch {}, Step {}: Average Reward: {:.2f}", batch, step, average_reward);
-
-		// const std::string filename = std::format("models/reinforce_baseline/reinforce_baseline_batch_{}_step_{}_reward_{:.2f}.mdl", batch, step, average_reward);
-		// cartpole_agent.save(filename.c_str());
+		csv_file << batch << "," << average_reward << "\n";
+		
+		if (batch % 500 == 0)
+		{
+			const std::string filename = std::format("models/reinforce_baseline/reinforce_baseline_batch_{}_reward_{:.0f}.mdl", batch, average_reward);
+			cartpole_agent.save(filename.c_str());
+			LOG_INFO("Model saved at batch {} with reward: {:.2f}", batch, average_reward);
+		}
 	};
 
 	trainer::train<cartpole_environment>(cartpole_agent, dt, batches, batch_size, learning_step_batch_size, on_learn);
@@ -71,6 +79,6 @@ int main()
 	logger::initialize();
 #endif
 
-	// replay("models/reinforce_baseline.mdl");
-	train();
+	replay("models/reinforce_baseline/reinforce_baseline_batch_9500_reward_323.mdl");
+	// train();
 };
