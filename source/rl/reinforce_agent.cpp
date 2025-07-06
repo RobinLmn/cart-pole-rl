@@ -8,8 +8,8 @@
 
 reinforce_agent::reinforce_agent(const neural_network& policy, const float gamma, const float learning_rate, const float baseline_decay)
     : policy{ policy }
+    , optimizer{ learning_rate }
     , gamma{ gamma }
-    , learning_rate{ learning_rate }
     , baseline_decay{ baseline_decay }
     , running_baseline{ 0.f }
 {
@@ -109,7 +109,7 @@ void reinforce_agent::learn(const std::vector<episode>& episodes)
         gradients[g] /= steps;
     }
 
-    policy.gradient_descent(gradients, learning_rate);
+    optimizer.step(policy, gradients);
 }
 
 void reinforce_agent::save(const char* filename) const

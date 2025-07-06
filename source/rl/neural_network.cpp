@@ -36,27 +36,6 @@ std::pair<gradient, Eigen::VectorXf> layer::backward(const Eigen::VectorXf& dA) 
     return { { dW, dB }, dInput };
 }
 
-void layer::gradient_descent(const gradient& gradient, const float learning_rate)
-{
-    weights -= learning_rate * gradient.dW;
-    biases -= learning_rate * gradient.dB;
-}
-
-Eigen::MatrixXf layer::get_weights() const
-{
-    return weights;
-}
-
-Eigen::VectorXf layer::get_biases() const
-{
-    return biases;
-}
-
-const char* layer::get_activation_name() const
-{
-    return activation.name.c_str();
-}
-
 void neural_network::add_layer(const layer& layer)
 {
     layers.emplace_back(layer);
@@ -78,7 +57,7 @@ std::vector<gradient> neural_network::backward(const Eigen::VectorXf& input_grad
     std::vector<gradient> gradients(layers.size());
 
     Eigen::VectorXf dA = input_gradient;
-    for (int i = layers.size() - 1; i >= 0; --i)
+    for (int i = static_cast<int>(layers.size()) - 1; i >= 0; --i)
     {
         const auto& [gradient, dInput] = layers[i].backward(dA);
         gradients[i] = gradient;
@@ -87,14 +66,6 @@ std::vector<gradient> neural_network::backward(const Eigen::VectorXf& input_grad
     }
 
     return gradients;
-}
-
-void neural_network::gradient_descent(const std::vector<gradient>& gradients, const float learning_rate)
-{
-    for (int i = 0; i < layers.size(); ++i)
-    {
-        layers[i].gradient_descent(gradients[i], learning_rate);
-    }
 }
 
 gradient& gradient::operator+=(const gradient& rhs)
@@ -123,14 +94,14 @@ void neural_network::save(const char* filename) const
     for (const auto& layer : layers)
     {
         out << "# activation\n";
-        out << layer.get_activation_name() << "\n";
+        out << layer.activation.name << "\n";
 
-        const Eigen::MatrixXf& weights = layer.get_weights();
+        const Eigen::MatrixXf& weights = layer.weights;
         out << "# weights\n";
         out << weights.innerSize() << " " << weights.outerSize() << "\n";
         out << weights << "\n";
 
-        const Eigen::VectorXf& biases = layer.get_biases();
+        const Eigen::VectorXf& biases = layer.biases;
         out << "# biases\n";
         out << biases.size() << "\n";
         out << biases.transpose() << "\n";
@@ -152,7 +123,6 @@ void neural_network::load(const char* filename)
 
     for (int layer_index = 0; layer_index < layer_count; ++layer_index)
     {
-
         std::string activation_name;
         std::getline(in, skip_line);
         std::getline(in, activation_name);

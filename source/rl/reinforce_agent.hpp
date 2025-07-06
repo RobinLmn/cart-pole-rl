@@ -2,6 +2,7 @@
 
 #include "rl/transition.hpp"
 #include "rl/neural_network.hpp"
+#include "rl/sgd_optimizer.hpp"
 
 #include <vector>
 
@@ -19,9 +20,9 @@ public:
 
 private:
     neural_network policy;
+    sgd_optimizer optimizer;
 
     const float gamma; // discount factor
-    const float learning_rate;
     const float baseline_decay;
     
     float running_baseline;
