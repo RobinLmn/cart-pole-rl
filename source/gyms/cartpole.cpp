@@ -18,6 +18,7 @@ static constexpr float cart_limit = 2.4f;
 static constexpr float angle_limit = 12.f * 3.1415f / 180.0f;
 static constexpr float cart_vel_heuristic = 2.0f;
 static constexpr float pole_vel_heuristic = 2.0f;
+static constexpr int max_steps = 500;
 
 void cartpole_environment::reset()
 {
@@ -53,6 +54,8 @@ void cartpole_environment::reset()
     
 	const entity hinge = world.create_entity();
 	world.add_component<joint>(hinge, joint{ cart, pole, glm::vec2{ 0.f, cart_size.y * 0.5f }, glm::vec2{ 0.f, -pole_size.y * 0.5f } });
+
+    step_index = 0;
 }
 
 bool cartpole_environment::is_done() const
@@ -60,7 +63,7 @@ bool cartpole_environment::is_done() const
     const float cart_x = world.get_component<transform>(cart).position.x;
     const float pole_angle = world.get_component<transform>(pole).rotation;
 
-    return std::abs(cart_x) > cart_limit || std::abs(pole_angle) > angle_limit;
+    return std::abs(cart_x) > cart_limit || std::abs(pole_angle) > angle_limit || step_index >= max_steps;
 }
 
 float cartpole_environment::step(const float dt, const int action)
@@ -71,6 +74,8 @@ float cartpole_environment::step(const float dt, const int action)
     world.get_component<rigidbody>(cart).force += glm::vec2{ force, 0 };
 
     physics_step(dt, world);
+
+    step_index++;
 
     return 1.f;
 }
@@ -94,7 +99,7 @@ reinforce_agent create_reinforce_cartpole_agent()
     nn.add_layer(layer{ 64, 2, "identity" });
 
     static constexpr float gamma = 0.99f;
-    static constexpr float learning_rate = 0.001f;
+    static constexpr float learning_rate = 0.01f;
 
     return reinforce_agent{ nn, gamma, learning_rate };
 }

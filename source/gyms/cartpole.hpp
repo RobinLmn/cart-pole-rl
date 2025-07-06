@@ -22,6 +22,8 @@ private:
 
     entity cart;
     entity pole;
+
+    int step_index;
 };
 
 reinforce_agent create_reinforce_cartpole_agent();
