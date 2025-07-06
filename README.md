@@ -68,7 +68,6 @@ The `learn` method updates the neural network based on the collected experience:
 1. **Return Calculation**: For each episode, the agent calculates the discounted return for each timestep. Actions that led to longer episodes get higher returns.
 2. **Advantage Calculation**: The agent calculates advantages by subtracting a baseline (mean of returns) and normalizing by standard deviation for stable training.
 3. **Policy Gradient**: The agent then calculates how to adjust its policy (neural network weights) to favor actions that led to good outcomes.
-4. **Gradient Clipping**: The gradient's magnitude is capped to prevent explosions and ensure stable training.
 5. **Weight Update**: The calculated gradients are used to update the neural network weights using gradient descent.
 
 ### Neural Network
