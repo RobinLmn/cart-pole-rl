@@ -8,7 +8,7 @@
 
 reinforce_agent::reinforce_agent(const neural_network& policy, const float gamma, const float learning_rate, const float baseline_decay)
     : policy{ policy }
-    , optimizer{ learning_rate }
+    , optimizer{ this->policy, learning_rate }
     , gamma{ gamma }
     , baseline_decay{ baseline_decay }
     , running_baseline{ 0.f }
@@ -69,7 +69,7 @@ void reinforce_agent::learn(const std::vector<episode>& episodes)
     }
 
     // Accumulate gradients with REINFORCE
-    std::vector<gradient> gradients;
+    std::vector<parameters> gradients;
     float steps = 0.0f;
 
     for (int e = 0; e < episode_count; ++e)
@@ -84,9 +84,9 @@ void reinforce_agent::learn(const std::vector<episode>& episodes)
             const Eigen::VectorXf& logits = policy.forward(state);
             const Eigen::VectorXf& probs = softmax(logits);
 
-            Eigen::VectorXf step_gradient = -advantage * (Eigen::VectorXf::Unit(probs.size(), action) - probs);
+            Eigen::VectorXf gradient = -advantage * (Eigen::VectorXf::Unit(probs.size(), action) - probs);
 
-            const std::vector<gradient>& step_gradients = policy.backward(step_gradient);
+            const std::vector<parameters>& step_gradients = policy.backward(gradient);
 
             if (gradients.empty()) 
             {
@@ -109,7 +109,7 @@ void reinforce_agent::learn(const std::vector<episode>& episodes)
         gradients[g] /= steps;
     }
 
-    optimizer.step(policy, gradients);
+    optimizer.step(gradients);
 }
 
 void reinforce_agent::save(const char* filename) const

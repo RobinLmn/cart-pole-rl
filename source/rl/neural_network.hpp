@@ -6,13 +6,10 @@
 #include <functional>
 #include <vector>
 
-struct gradient
+struct parameters
 {
-    Eigen::MatrixXf dW;
-    Eigen::VectorXf dB;
-
-    gradient& operator+=(const gradient& rhs);
-    gradient& operator/=(const float rhs);
+    Eigen::MatrixXf weights;
+    Eigen::VectorXf biases;
 };
 
 struct layer
@@ -23,11 +20,10 @@ public:
 
 public:
     [[nodiscard]] Eigen::VectorXf forward(const Eigen::VectorXf& input) const;
-    [[nodiscard]] std::pair<gradient, Eigen::VectorXf> backward(const Eigen::VectorXf& gradient) const;
+    [[nodiscard]] std::pair<parameters, Eigen::VectorXf> backward(const Eigen::VectorXf& gradient) const;
 
 public:
-    Eigen::MatrixXf weights;
-    Eigen::VectorXf biases;
+    parameters params;
 
     const activation_function activation;
 
@@ -42,7 +38,7 @@ public:
     void add_layer(const layer& layer);
     
     [[nodiscard]] Eigen::VectorXf forward(const Eigen::VectorXf& input) const;
-    [[nodiscard]] std::vector<gradient> backward(const Eigen::VectorXf& gradients) const;
+    [[nodiscard]] std::vector<parameters> backward(const Eigen::VectorXf& gradients) const;
 
     void save(const char* filename) const;
     void load(const char* filename);
@@ -50,3 +46,10 @@ public:
 public:
     std::vector<layer> layers;
 };
+
+parameters& operator+=(parameters& lhs, const parameters& rhs);
+parameters& operator*=(parameters& lhs, float rhs);
+parameters& operator/=(parameters& lhs, float rhs);
+parameters operator*(const parameters& lhs, float rhs);
+parameters operator*(float lhs, const parameters& rhs);
+parameters operator-(const parameters& lhs, const parameters& rhs);

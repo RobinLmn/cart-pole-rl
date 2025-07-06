@@ -4,34 +4,42 @@
 
 #include <fstream>
 
+namespace
+{
+
+Eigen::MatrixXf random_weights(const int input_dim, const int output_dim)
+{
+    return Eigen::MatrixXf::Random(output_dim, input_dim) * std::sqrt(6.f / (input_dim + output_dim));
+}
+
+}
+
 layer::layer(const Eigen::MatrixXf& weights, const Eigen::VectorXf& biases, const char* activation_name)
     : activation{ activation_name }
-    , weights{ weights }
-    , biases{ biases }
+    , params{ weights, biases }
 {
 }
 
 layer::layer(const int input_dim, const int output_dim, const char* activation_name)
     : activation{ activation_name }
-    , weights{ Eigen::MatrixXf::Random(output_dim, input_dim) * std::sqrt(6.f / (input_dim + output_dim)) }
-    , biases{ Eigen::VectorXf::Zero(output_dim) }
+    , params{ random_weights(input_dim, output_dim), Eigen::VectorXf::Zero(output_dim) }
 {
 }
 
 Eigen::VectorXf layer::forward(const Eigen::VectorXf& input) const
 {
     inputs = input;
-    pre_activation = weights * input + biases;
+    pre_activation = params.weights * input + params.biases;
 
     return activation.func(pre_activation);
 }
 
-std::pair<gradient, Eigen::VectorXf> layer::backward(const Eigen::VectorXf& dA) const
+std::pair<parameters, Eigen::VectorXf> layer::backward(const Eigen::VectorXf& dA) const
 {
     const Eigen::VectorXf dZ = dA.array() * activation.derivative(pre_activation).array();
     const Eigen::MatrixXf dW = dZ * inputs.transpose();
     const Eigen::VectorXf dB = dZ;
-    const Eigen::VectorXf dInput = weights.transpose() * dZ;
+    const Eigen::VectorXf dInput = params.weights.transpose() * dZ;
 
     return { { dW, dB }, dInput };
 }
@@ -52,9 +60,9 @@ Eigen::VectorXf neural_network::forward(const Eigen::VectorXf& input) const
     return output;
 }
 
-std::vector<gradient> neural_network::backward(const Eigen::VectorXf& input_gradient) const
+std::vector<parameters> neural_network::backward(const Eigen::VectorXf& input_gradient) const
 {
-    std::vector<gradient> gradients(layers.size());
+    std::vector<parameters> gradients(layers.size());
 
     Eigen::VectorXf dA = input_gradient;
     for (int i = static_cast<int>(layers.size()) - 1; i >= 0; --i)
@@ -66,22 +74,6 @@ std::vector<gradient> neural_network::backward(const Eigen::VectorXf& input_grad
     }
 
     return gradients;
-}
-
-gradient& gradient::operator+=(const gradient& rhs)
-{
-    dW += rhs.dW;
-    dB += rhs.dB;
-
-    return *this;
-}
-
-gradient& gradient::operator/=(const float rhs)
-{
-    dW /= rhs;
-    dB /= rhs;
-
-    return *this;
 }
 
 void neural_network::save(const char* filename) const
@@ -96,12 +88,12 @@ void neural_network::save(const char* filename) const
         out << "# activation\n";
         out << layer.activation.name << "\n";
 
-        const Eigen::MatrixXf& weights = layer.weights;
+        const Eigen::MatrixXf& weights = layer.params.weights;
         out << "# weights\n";
         out << weights.innerSize() << " " << weights.outerSize() << "\n";
         out << weights << "\n";
 
-        const Eigen::VectorXf& biases = layer.biases;
+        const Eigen::VectorXf& biases = layer.params.biases;
         out << "# biases\n";
         out << biases.size() << "\n";
         out << biases.transpose() << "\n";
@@ -157,4 +149,50 @@ void neural_network::load(const char* filename)
 
         add_layer({ weights, biases, activation_name.c_str() });
     }
+}
+
+parameters operator+(const parameters& lhs, const parameters& rhs)
+{
+    return { lhs.weights + rhs.weights, lhs.biases + rhs.biases };
+}
+
+parameters operator*(const parameters& lhs, float rhs)
+{
+    return { lhs.weights * rhs, lhs.biases * rhs };
+}
+
+parameters operator*(float lhs, const parameters& rhs)
+{
+    return { lhs * rhs.weights, lhs * rhs.biases };
+}
+
+parameters operator/(const parameters& lhs, float rhs)
+{
+    return { lhs.weights / rhs, lhs.biases / rhs };
+}
+
+parameters& operator+=(parameters& lhs, const parameters& rhs)
+{
+    lhs.weights += rhs.weights;
+    lhs.biases += rhs.biases;
+    return lhs;
+}
+
+parameters& operator*=(parameters& lhs, float rhs)
+{
+    lhs.weights *= rhs;
+    lhs.biases *= rhs;
+    return lhs;
+}
+
+parameters& operator/=(parameters& lhs, float rhs)
+{
+    lhs.weights /= rhs;
+    lhs.biases /= rhs;
+    return lhs;
+}
+
+parameters operator-(const parameters& lhs, const parameters& rhs)
+{
+    return { lhs.weights - rhs.weights, lhs.biases - rhs.biases };
 }
