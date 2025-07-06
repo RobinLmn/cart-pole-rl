@@ -17,8 +17,6 @@ A reinforcement learning system built from scratch in C++. This project implemen
 
 Reinforcement learning teaches an agent to make decisions by learning from experience. The goal is to maximize cumulative rewards over time through trial and error.
 
-The training loop is implemented in [`source/rl/simulation.cpp`](source/rl/simulation.cpp):
-
 ```cpp
 for (int episode = 1; episode <= episodes; ++episode)
 {
@@ -57,7 +55,7 @@ The CartPole environment processes the agent's action, returns its reward, and u
 
 ### Agent: REINFORCE Algorithm
 
-The agent uses the REINFORCE policy gradient algorithm with several improvements for stability. It runs a neural network that outputs action probabilities. It then updates the neural network based on the episode outcomes (the reward). The agent is implemented in [`source/rl/agent.cpp`](source/rl/agent.cpp).
+The agent uses the REINFORCE policy gradient algorithm with several improvements for stability. It runs a neural network that outputs action probabilities. It then updates the neural network based on the episode outcomes (the reward). The agent is implemented in [`source/rl/reinforce_agent.cpp`](source/rl/reinforce_agent.cpp).
 
 The `act` method determines what action the agent should take given the current state. It works in three steps:
 
