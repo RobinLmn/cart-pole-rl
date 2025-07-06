@@ -8,7 +8,7 @@
 class reinforce_agent
 {
 public:
-    reinforce_agent(const neural_network& policy, const float gamma, const float learning_rate);
+    reinforce_agent(const neural_network& policy, const float gamma = 0.99f, const float learning_rate = 0.01f, const float baseline_decay = 0.99f);
     
 public:
     [[nodiscard]] int act(const Eigen::VectorXf& state) const;
@@ -20,6 +20,9 @@ public:
 private:
     neural_network policy;
 
-    float gamma; // discount factor
-    float learning_rate;
+    const float gamma; // discount factor
+    const float learning_rate;
+    const float baseline_decay;
+    
+    float running_baseline;
 };

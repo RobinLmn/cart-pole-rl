@@ -98,8 +98,5 @@ reinforce_agent create_reinforce_cartpole_agent()
     nn.add_layer(layer{ 128, 64, "relu" });
     nn.add_layer(layer{ 64, 2, "identity" });
 
-    static constexpr float gamma = 0.99f;
-    static constexpr float learning_rate = 0.01f;
-
-    return reinforce_agent{ nn, gamma, learning_rate };
+    return reinforce_agent{ nn };
 }

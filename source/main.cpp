@@ -43,7 +43,7 @@ void train()
 {
 	reinforce_agent cartpole_agent = create_reinforce_cartpole_agent();
 
-	std::ofstream csv_file("models/reinforce_baseline/reinforce_baseline_training_reward_per_batch.csv");
+	std::ofstream csv_file("models/reinforce_running_baseline/reinforce_running_baseline_training_reward_per_batch.csv");
 	csv_file << "batch,average_reward\n";
 
 	const auto on_learn = [&cartpole_agent, &csv_file](const std::vector<episode>& episodes, const int batch, const int step)
@@ -59,10 +59,12 @@ void train()
 		
 		if (batch % 500 == 0)
 		{
-			const std::string filename = std::format("models/reinforce_baseline/reinforce_baseline_batch_{}_reward_{:.0f}.mdl", batch, average_reward);
+			const std::string filename = std::format("models/reinforce_running_baseline/reinforce_running_baseline_batch_{}_reward_{:.0f}.mdl", batch, average_reward);
 			cartpole_agent.save(filename.c_str());
 			LOG_INFO("Model saved at batch {} with reward: {:.2f}", batch, average_reward);
 		}
+
+		cartpole_agent.save("models/reinforce_running_baseline/reinforce_running_baseline.mdl");
 	};
 
 	trainer::train<cartpole_environment>(cartpole_agent, dt, batches, batch_size, learning_step_batch_size, on_learn);
@@ -79,6 +81,6 @@ int main()
 	logger::initialize();
 #endif
 
-	replay("models/reinforce_baseline/reinforce_baseline_batch_9500_reward_323.mdl");
-	// train();
+	// replay("models/reinforce_baseline/reinforce_running_baseline.mdl");
+	train();
 };

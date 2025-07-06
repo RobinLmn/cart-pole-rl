@@ -6,10 +6,12 @@
 #include <glm/glm.hpp>
 #include <Eigen/Dense>
 
-reinforce_agent::reinforce_agent(const neural_network& policy, const float gamma, const float learning_rate)
+reinforce_agent::reinforce_agent(const neural_network& policy, const float gamma, const float learning_rate, const float baseline_decay)
     : policy{ policy }
     , gamma{ gamma }
     , learning_rate{ learning_rate }
+    , baseline_decay{ baseline_decay }
+    , running_baseline{ 0.f }
 {
 }
 
@@ -52,14 +54,16 @@ void reinforce_agent::learn(const std::vector<episode>& episodes)
     // Normalize returns and substract baseline
     {
         const Eigen::VectorXf& flatten_returns = flatten(returns);
-
         const float mean = flatten_returns.mean();
-        const float stddev = glm::sqrt((flatten_returns.array() - mean).square().mean());
+
+        running_baseline = baseline_decay * running_baseline + (1.0f - baseline_decay) * mean;
+        
+        const float stddev = glm::sqrt((flatten_returns.array() - running_baseline).square().mean());
         const float norm = std::max(stddev, 1e-8f);
 
         for (Eigen::VectorXf& episode_return : returns)
         {
-            episode_return = episode_return.array() - mean;
+            episode_return = episode_return.array() - running_baseline;
             episode_return /= norm;
         }
     }
