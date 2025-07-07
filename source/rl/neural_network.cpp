@@ -196,3 +196,26 @@ parameters operator-(const parameters& lhs, const parameters& rhs)
 {
     return { lhs.weights - rhs.weights, lhs.biases - rhs.biases };
 }
+
+void accumulate(std::vector<parameters>& params, const std::vector<parameters>& new_params)
+{
+    if (params.empty()) 
+    {
+        params = new_params;
+    } 
+    else
+    {
+        for (int i = 0; i < params.size(); ++i)
+        {
+            params[i] += new_params[i];
+        }
+    }
+}
+
+void normalize(std::vector<parameters>& params, const float count)
+{
+    for (int i = 0; i < params.size(); ++i)
+    {
+        params[i] /= count;
+    }
+}

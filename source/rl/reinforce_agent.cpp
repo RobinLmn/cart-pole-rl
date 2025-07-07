@@ -84,30 +84,16 @@ void reinforce_agent::learn(const std::vector<episode>& episodes)
             const Eigen::VectorXf& logits = policy.forward(state);
             const Eigen::VectorXf& probs = softmax(logits);
 
-            Eigen::VectorXf gradient = -advantage * (Eigen::VectorXf::Unit(probs.size(), action) - probs);
+            const Eigen::VectorXf step_gradient = -advantage * (Eigen::VectorXf::Unit(probs.size(), action) - probs);
 
-            const std::vector<parameters>& step_gradients = policy.backward(gradient);
-
-            if (gradients.empty()) 
-            {
-                gradients = step_gradients;
-            } 
-            else
-            {
-                for (int g = 0; g < gradients.size(); ++g)
-                {
-                    gradients[g] += step_gradients[g];
-                }
-            }
+            const std::vector<parameters>& step_gradients = policy.backward(step_gradient);
+            accumulate(gradients, step_gradients);
 
             steps += 1.0f;
         }
     }
 
-    for (int g = 0; g < gradients.size(); ++g)
-    {
-        gradients[g] /= steps;
-    }
+    normalize(gradients, steps);
 
     optimizer.step(gradients);
 }

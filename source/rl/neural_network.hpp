@@ -53,3 +53,5 @@ parameters& operator/=(parameters& lhs, float rhs);
 parameters operator*(const parameters& lhs, float rhs);
 parameters operator*(float lhs, const parameters& rhs);
 parameters operator-(const parameters& lhs, const parameters& rhs);
+void accumulate(std::vector<parameters>& params, const std::vector<parameters>& new_params);
+void normalize(std::vector<parameters>& params, const float count);
