@@ -2,14 +2,14 @@
 
 #include "rl/transition.hpp"
 #include "rl/neural_network.hpp"
-#include "rl/sgd_optimizer.hpp"
+#include "rl/adam_optimizer.hpp"
 
 #include <vector>
 
 class reinforce_agent
 {
 public:
-    reinforce_agent(const neural_network& policy, const float gamma = 0.99f, const float learning_rate = 0.01f, const float baseline_decay = 0.99f);
+    reinforce_agent(const neural_network& policy, const float gamma = 0.99f, const float baseline_decay = 0.99f);
     
 public:
     [[nodiscard]] int act(const Eigen::VectorXf& state) const;
@@ -20,7 +20,7 @@ public:
 
 private:
     neural_network policy;
-    sgd_optimizer optimizer;
+    adam_optimizer optimizer;
 
     const float gamma; // discount factor
     const float baseline_decay;

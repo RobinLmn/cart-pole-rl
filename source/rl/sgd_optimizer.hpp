@@ -7,7 +7,7 @@
 class sgd_optimizer
 {
 public:
-    sgd_optimizer(neural_network& policy, const float learning_rate, const float momentum = 0.9f);
+    sgd_optimizer(neural_network& policy, const float learning_rate = 0.1f, const float momentum = 0.9f);
 
 public:
     void step(const std::vector<parameters>& gradients);

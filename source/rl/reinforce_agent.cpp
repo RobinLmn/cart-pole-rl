@@ -6,9 +6,9 @@
 #include <glm/glm.hpp>
 #include <Eigen/Dense>
 
-reinforce_agent::reinforce_agent(const neural_network& policy, const float gamma, const float learning_rate, const float baseline_decay)
+reinforce_agent::reinforce_agent(const neural_network& policy, const float gamma, const float baseline_decay)
     : policy{ policy }
-    , optimizer{ this->policy, learning_rate }
+    , optimizer{ this->policy }
     , gamma{ gamma }
     , baseline_decay{ baseline_decay }
     , running_baseline{ 0.f }
