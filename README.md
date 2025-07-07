@@ -15,7 +15,7 @@ An implementation of the classic cart-pole task built from scratch in C++. The p
 - **Entity Component System** built with EnTT for fast simulation.
 - **SFML visualization** with a headless mode for training.
 - **Batch trainer** capable of running multiple environments in parallel.
-- 
+  
 ## Environment
 
 The environment, defined in [`source/gyms/cartpole.cpp`](source/gyms/cartpole.cpp), is responsible for updating the physics simulation and returning the reward given the agent's action.
