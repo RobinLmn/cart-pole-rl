@@ -51,7 +51,7 @@ void reinforce_agent::learn(const std::vector<episode>& episodes)
         returns.push_back(std::move(episode_return));
     }
 
-    // Normalize returns and substract baseline
+    // Normalize returns and subtract baseline
     {
         const Eigen::VectorXf& flatten_returns = flatten(returns);
         const float mean = flatten_returns.mean();
