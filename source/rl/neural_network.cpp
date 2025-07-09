@@ -248,6 +248,4 @@ void clip_norm(std::vector<parameters>& params, const float max_norm)
         param.weights *= scale;
         param.biases *= scale;
     }
-
-    LOG_INFO("Clipped parameters {:.4f} to norm: {:.4f}", norm, max_norm);
 }
