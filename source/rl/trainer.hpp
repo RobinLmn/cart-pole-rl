@@ -23,11 +23,11 @@ class trainer
 {
 public:
     template<environment_concept environment_type, agent_concept agent_type, typename functor>
-    static void train(agent_type& agent, const float dt, const int batch_count, const int episodes_per_batch, const int learning_step_batch_size, functor&& on_learn);
+    static void train(agent_type& agent, const float dt, const int batch_count, const int episodes_per_batch, const int learning_step_batch_size, functor&& on_batch_complete);
 };
 
 template<environment_concept environment_type, agent_concept agent_type, typename functor>
-void trainer::train(agent_type& agent, const float dt, const int batch_count, const int episodes_per_batch, const int learning_step_batch_size, functor&& on_learn)
+void trainer::train(agent_type& agent, const float dt, const int batch_count, const int episodes_per_batch, const int learning_step_batch_size, functor&& on_batch_complete)
 {
     const auto are_environments_done = [](const std::vector<environment_type>& environments) -> bool
     {
@@ -37,13 +37,14 @@ void trainer::train(agent_type& agent, const float dt, const int batch_count, co
     std::vector<environment_type> environments(episodes_per_batch);
 
     for (int batch_index = 0; batch_index < batch_count; ++batch_index)
-    {
+    {    
         for (int episode_index = 0; episode_index < episodes_per_batch; ++episode_index)
         {
             environments[episode_index].reset();
         }
 
         int learning_step = 0;
+        float total_reward = 0.0f;
 
         std::vector<episode> episodes(episodes_per_batch);
 
@@ -51,19 +52,22 @@ void trainer::train(agent_type& agent, const float dt, const int batch_count, co
         {
             for (int episode_index = 0; episode_index < episodes_per_batch; ++episode_index)
             {
-                if (environments[episode_index].is_done())
+                environment_type& environment = environments[episode_index];
+
+                if (environment.is_done())
                 {
                     continue;
                 }
-
-                environment_type& environment = environments[episode_index];
 
                 const Eigen::VectorXf& state = environment.get_state();
                 const int action = agent.act(state);
 
                 const float reward = environment.step(dt, action);
+                const Eigen::VectorXf& next_state = environment.get_state();
 
-                episodes[episode_index].emplace_back(environment.is_done(), action, reward, state);
+                episodes[episode_index].emplace_back(environment.is_done(), action, reward, state, next_state);
+
+                total_reward += reward;
             }
         
             learning_step++;
@@ -71,7 +75,6 @@ void trainer::train(agent_type& agent, const float dt, const int batch_count, co
             if (learning_step_batch_size > 0 && learning_step % learning_step_batch_size == 0)
             {
                 agent.learn(episodes);
-                on_learn(episodes, batch_index, learning_step);
 
                 for (episode& episode : episodes)
                 {
@@ -83,12 +86,14 @@ void trainer::train(agent_type& agent, const float dt, const int batch_count, co
         if (learning_step_batch_size <= 0 || learning_step % learning_step_batch_size != 0)
         {
             agent.learn(episodes);
-            on_learn(episodes, batch_index, learning_step);
 
             for (episode& episode : episodes)
             {
                 episode.clear();
             }
         }
+
+        const float average_reward = total_reward / static_cast<float>(episodes_per_batch);
+        on_batch_complete(batch_index, average_reward);
     }
 }

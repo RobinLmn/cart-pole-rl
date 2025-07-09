@@ -10,6 +10,7 @@ struct transition
     int action;
     float reward;
     Eigen::VectorXf state;
+    Eigen::VectorXf next_state;
 };
 
 using episode = std::vector<transition>;
