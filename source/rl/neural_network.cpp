@@ -219,3 +219,35 @@ void normalize(std::vector<parameters>& params, const float count)
         params[i] /= count;
     }
 }
+
+float l2_norm_squared(const std::vector<parameters>& params)
+{
+    float norm_squared = 0.0f;
+    
+    for (const auto& param : params)
+    {
+        norm_squared += param.weights.squaredNorm();
+        norm_squared += param.biases.squaredNorm();
+    }
+    
+    return norm_squared;
+}
+
+void clip_norm(std::vector<parameters>& params, const float max_norm)
+{
+    const float norm_squared = l2_norm_squared(params);
+    if (norm_squared <= max_norm * max_norm)
+    {
+        return;
+    }
+
+    const float norm = std::sqrt(norm_squared);
+    const float scale = max_norm / norm;
+    for (parameters& param : params)
+    {
+        param.weights *= scale;
+        param.biases *= scale;
+    }
+
+    LOG_INFO("Clipped parameters {:.4f} to norm: {:.4f}", norm, max_norm);
+}

@@ -55,3 +55,5 @@ parameters operator*(float lhs, const parameters& rhs);
 parameters operator-(const parameters& lhs, const parameters& rhs);
 void accumulate(std::vector<parameters>& params, const std::vector<parameters>& new_params);
 void normalize(std::vector<parameters>& params, const float count);
+float l2_norm_squared(const std::vector<parameters>& params);
+void clip_norm(std::vector<parameters>& params, const float max_norm);
