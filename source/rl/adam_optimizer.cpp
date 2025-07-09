@@ -24,7 +24,7 @@ adam_optimizer::adam_optimizer(neural_network& policy,  const float learning_rat
 
 void adam_optimizer::step(const std::vector<parameters>& gradients)
 {
-    for (int i = 0; i < policy.layers.size(); ++i)
+    for (size_t i = 0; i < policy.layers.size(); ++i)
     {
         layer& layer = policy.layers[i];
         const parameters& gradient = gradients[i];
