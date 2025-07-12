@@ -8,18 +8,20 @@
 
 #include <numeric>
 
-ppo_agent::ppo_agent(const neural_network& actor, const neural_network& critic, const float gamma, const float epsilon, const int ppo_epochs)
+ppo_agent::ppo_agent(const neural_network& actor, const neural_network& critic, const action_space space, const float gamma, const float epsilon, const int ppo_epochs)
     : actor{ actor }
     , critic{ critic }
     , actor_optimizer{ this->actor, 0.0005f }
     , critic_optimizer{ this->critic, 0.001f }
+    , space{ space }
     , gamma{ gamma }
     , epsilon{ epsilon }
     , ppo_epochs{ ppo_epochs }
 {
+    ASSERT(space == action_space::DISCRETE, return, "PPO only implements discrete actions.");
 }
 
-int ppo_agent::act(const Eigen::VectorXf& state) const
+action ppo_agent::act(const Eigen::VectorXf& state) const
 {
     const Eigen::VectorXf& logits = actor.forward(state);
     const Eigen::VectorXf& probs = softmax(logits);
@@ -64,7 +66,7 @@ void ppo_agent::learn(const std::vector<episode>& episodes)
 
             const Eigen::VectorXf& logits = actor.forward(step.state);
             const Eigen::VectorXf& probs = softmax(logits);
-            episode_old_log_probs[t] = std::log(std::max(probs(step.action), 1e-8f));
+            episode_old_log_probs[t] = std::log(std::max(probs(step.action.as_discrete()), 1e-8f));
         }
 
         returns[e] = std::move(episode_returns);
@@ -100,7 +102,7 @@ void ppo_agent::learn(const std::vector<episode>& episodes)
             const episode& episode = episodes[e];
             for (int t = 0; t < static_cast<int>(episode.size()); ++t)
             {
-                const int action = episode[t].action;
+                const int action = episode[t].action.as_discrete();
                 const Eigen::VectorXf& state = episode[t].state;
                 const float advantage = advantages[e][t];
                 const float return_value = returns[e][t];

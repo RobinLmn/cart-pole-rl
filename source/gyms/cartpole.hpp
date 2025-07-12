@@ -3,6 +3,7 @@
 #include "rl/reinforce_agent.hpp"
 #include "rl/actor_critic_agent.hpp"
 #include "rl/ppo_agent.hpp"
+#include "rl/action.hpp"
 
 #include "world/world.hpp"
 
@@ -11,7 +12,7 @@
 class cartpole_environment
 {
 public:
-    float step(const float dt, const int action);
+    float step(const float dt, const action& action);
 
     void reset();
 

@@ -6,16 +6,18 @@
 #include <glm/glm.hpp>
 #include <Eigen/Dense>
 
-reinforce_agent::reinforce_agent(const neural_network& policy, const float gamma, const float baseline_decay)
+reinforce_agent::reinforce_agent(const neural_network& policy, const action_space space, const float gamma, const float baseline_decay)
     : policy{ policy }
     , optimizer{ this->policy, 0.001f }
+    , space{ space }
     , gamma{ gamma }
     , baseline_decay{ baseline_decay }
     , running_baseline{ 0.f }
 {
+    ASSERT(space == action_space::DISCRETE, return, "REINFORCE only implements discrete actions.");
 }
 
-int reinforce_agent::act(const Eigen::VectorXf& state) const
+action reinforce_agent::act(const Eigen::VectorXf& state) const
 {
     const Eigen::VectorXf& logits = policy.forward(state);
     const Eigen::VectorXf& probs = softmax(logits);
@@ -76,7 +78,7 @@ void reinforce_agent::learn(const std::vector<episode>& episodes)
         const episode& episode = episodes[e];
         for (size_t t = 0; t < episode.size(); ++t)
         {
-            const int action = episode[t].action;
+            const int action = episode[t].action.as_discrete();
             const float advantage = returns[e][t];
             const Eigen::VectorXf& state = episode[t].state;
             const Eigen::VectorXf& logits = policy.forward(state);

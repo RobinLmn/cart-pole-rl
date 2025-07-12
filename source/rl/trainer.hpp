@@ -1,5 +1,6 @@
 #pragma once
 
+#include "rl/action.hpp"
 #include "rl/transition.hpp"
 #include "core/log.hpp"
 
@@ -10,12 +11,12 @@ concept environment_concept = std::default_initializable<environment_type> && re
     { environment.reset() } -> std::same_as<void>;
     { environment.is_done() } -> std::convertible_to<bool>;
     { environment.get_state() } -> std::same_as<Eigen::VectorXf>;
-    { environment.step(std::declval<float>(), std::declval<int>()) } -> std::convertible_to<float>;
+    { environment.step(std::declval<float>(), std::declval<action>()) } -> std::convertible_to<float>;
 };
 
 template<typename agent_type>
 concept agent_concept = requires(agent_type agent) {
-    { agent.act(std::declval<Eigen::VectorXf>()) } -> std::same_as<int>;
+    { agent.act(std::declval<Eigen::VectorXf>()) } -> std::same_as<action>;
     { agent.learn(std::declval<std::vector<episode>>()) } -> std::same_as<void>;
 };
 
@@ -60,7 +61,7 @@ void trainer::train(agent_type& agent, const float dt, const int batch_count, co
                 }
 
                 const Eigen::VectorXf& state = environment.get_state();
-                const int action = agent.act(state);
+                const action& action = agent.act(state);
 
                 const float reward = environment.step(dt, action);
                 const Eigen::VectorXf& next_state = environment.get_state();

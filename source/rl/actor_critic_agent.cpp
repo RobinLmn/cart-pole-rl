@@ -6,16 +6,18 @@
 #include <glm/glm.hpp>
 #include <Eigen/Dense>
 
-actor_critic_agent::actor_critic_agent(const neural_network& actor, const neural_network& critic, const float gamma)
+actor_critic_agent::actor_critic_agent(const neural_network& actor, const neural_network& critic, const action_space space, const float gamma)
     : actor{ actor }
     , critic{ critic }
+    , space{ space }
     , actor_optimizer{ this->actor, 0.0005f }
     , critic_optimizer{ this->critic, 0.001f }
     , gamma{ gamma }
 {
+    ASSERT(space == action_space::DISCRETE, return, "Actor-Critic only implements discrete actions.");
 }
 
-int actor_critic_agent::act(const Eigen::VectorXf& state) const
+action actor_critic_agent::act(const Eigen::VectorXf& state) const
 {
     const Eigen::VectorXf& logits = actor.forward(state);
     const Eigen::VectorXf& probs = softmax(logits);
@@ -58,7 +60,7 @@ void actor_critic_agent::learn(const std::vector<episode>& episodes)
         const episode& episode = episodes[e];
         for (size_t t = 0; t < episode.size(); ++t)
         {
-            const int action = episode[t].action;
+            const int action = episode[t].action.as_discrete();
             const Eigen::VectorXf& state = episode[t].state;
             const float td_error = td_errors[e][t];
 

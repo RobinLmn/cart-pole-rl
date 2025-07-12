@@ -66,11 +66,14 @@ bool cartpole_environment::is_done() const
     return std::abs(cart_x) > cart_limit || std::abs(pole_angle) > angle_limit || step_index >= max_steps;
 }
 
-float cartpole_environment::step(const float dt, const int action)
+float cartpole_environment::step(const float dt, const action& action)
 {
-    ASSERT(action == 0 || action == 1, return 0.f, "Expected discrete action to be 0 or 1 (left/right)");
+    ASSERT(action.is_discrete(), return 0.f, "Expected a discrete action for cartpole environment.");
 
-    const float force = (action == 0) ? -10.f : 10.f;
+    const int index = action.as_discrete();
+    ASSERT(index == 0 || index == 1, return 0.f, "Expected discrete action to be 0 or 1 (left/right)");
+
+    const float force = (index == 0) ? -10.f : 10.f;
     world.get_component<rigidbody>(cart).force += glm::vec2{ force, 0 };
 
     physics_step(dt, world);
@@ -98,7 +101,7 @@ reinforce_agent create_reinforce_cartpole_agent()
     nn.add_layer(layer{ 128, 64, "relu" });
     nn.add_layer(layer{ 64, 2, "identity" });
 
-    return reinforce_agent{ nn };
+    return reinforce_agent{ nn, action_space::DISCRETE };
 }
 
 actor_critic_agent create_actor_critic_cartpole_agent()
@@ -115,7 +118,7 @@ actor_critic_agent create_actor_critic_cartpole_agent()
     critic.add_layer(layer{ 128, 64, "relu" });
     critic.add_layer(layer{ 64, 1, "identity" });
 
-    return actor_critic_agent{ actor, critic };
+    return actor_critic_agent{ actor, critic, action_space::DISCRETE };
 }
 
 ppo_agent create_ppo_cartpole_agent()
@@ -132,5 +135,5 @@ ppo_agent create_ppo_cartpole_agent()
     critic.add_layer(layer{ 128, 64, "relu" });
     critic.add_layer(layer{ 64, 1, "identity" });
 
-    return ppo_agent{ actor, critic };
+    return ppo_agent{ actor, critic, action_space::DISCRETE };
 }

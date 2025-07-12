@@ -1,13 +1,14 @@
 #pragma once
 
-#include <vector>
+#include "rl/action.hpp"
 
+#include <vector>
 #include <Eigen/Dense>
 
 struct transition
 {
     bool done;
-    int action;
+    action action;
     float reward;
     Eigen::VectorXf state;
     Eigen::VectorXf next_state;

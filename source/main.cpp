@@ -26,7 +26,7 @@ void replay(const char* filename)
 	const auto update = [&cartpole_environment, &cartpole_agent]()
 	{
 		const Eigen::VectorXf& state = cartpole_environment.get_state();
-		const int action = cartpole_agent.act(state);
+		const action& action = cartpole_agent.act(state);
 
 		cartpole_environment.step(dt, action);
 
