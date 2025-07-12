@@ -117,3 +117,20 @@ actor_critic_agent create_actor_critic_cartpole_agent()
 
     return actor_critic_agent{ actor, critic };
 }
+
+ppo_agent create_ppo_cartpole_agent()
+{
+    neural_network actor;
+
+    actor.add_layer(layer{ 4, 128, "relu" });
+    actor.add_layer(layer{ 128, 64, "relu" });
+    actor.add_layer(layer{ 64, 2, "identity" });
+
+    neural_network critic;
+
+    critic.add_layer(layer{ 4, 128, "relu" });
+    critic.add_layer(layer{ 128, 64, "relu" });
+    critic.add_layer(layer{ 64, 1, "identity" });
+
+    return ppo_agent{ actor, critic };
+}

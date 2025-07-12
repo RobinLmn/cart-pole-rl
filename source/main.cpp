@@ -11,13 +11,13 @@
 #include <fstream>
 	
 static constexpr float dt = 0.02f;
-static constexpr int batches = 3000;
+static constexpr int batches = 500;
 static constexpr int batch_size = 30;
-static constexpr int learning_step_batch_size = 1;
+static constexpr int learning_step_batch_size = -1;
 
 void replay(const char* filename)
 {
-	reinforce_agent cartpole_agent = create_reinforce_cartpole_agent();
+	ppo_agent cartpole_agent = create_ppo_cartpole_agent();
 	cartpole_agent.load(filename);
 
 	cartpole_environment cartpole_environment;
@@ -41,9 +41,9 @@ void replay(const char* filename)
 
 void train()
 {
-	actor_critic_agent cartpole_agent = create_actor_critic_cartpole_agent();
+	ppo_agent cartpole_agent = create_ppo_cartpole_agent();
 
-	std::ofstream csv_file("models/actor_critic/actor_critic_training_reward_per_batch.csv");
+	std::ofstream csv_file("models/ppo/ppo_training_reward_per_batch.csv");
 	csv_file << "batch,average_reward\n";
 
 	const auto on_batch_complete = [&cartpole_agent, &csv_file](const int batch, const float average_reward)
@@ -53,7 +53,7 @@ void train()
 		if (batch % 10 != 0 && batch != batches - 1)
 			return;
 		
-		// const std::string filename = std::format("models/actor_critic/actor_critic_batch_{}_reward_{:.0f}.mdl", batch, average_reward);
+		// const std::string filename = std::format("models/ppo/ppo_batch_{}_reward_{:.0f}.mdl", batch, average_reward);
 		// cartpole_agent.save(filename.c_str());
 
 		LOG_INFO("Batch {}: Average Reward: {:.2f}", batch, average_reward);

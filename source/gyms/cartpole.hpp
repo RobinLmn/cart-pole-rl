@@ -2,6 +2,8 @@
 
 #include "rl/reinforce_agent.hpp"
 #include "rl/actor_critic_agent.hpp"
+#include "rl/ppo_agent.hpp"
+
 #include "world/world.hpp"
 
 #include <Eigen/Dense>
@@ -29,3 +31,4 @@ private:
 
 reinforce_agent create_reinforce_cartpole_agent();
 actor_critic_agent create_actor_critic_cartpole_agent();
+ppo_agent create_ppo_cartpole_agent();
