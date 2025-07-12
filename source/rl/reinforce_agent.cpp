@@ -8,7 +8,7 @@
 
 reinforce_agent::reinforce_agent(const neural_network& policy, const float gamma, const float baseline_decay)
     : policy{ policy }
-    , optimizer{ this->policy }
+    , optimizer{ this->policy, 0.001f }
     , gamma{ gamma }
     , baseline_decay{ baseline_decay }
     , running_baseline{ 0.f }
@@ -29,12 +29,11 @@ void reinforce_agent::learn(const std::vector<episode>& episodes)
     const int episode_count = static_cast<int>(episodes.size());
     ASSERT(episode_count > 0, return, "REINFORCE requires at least one episode to learn.");
 
-    std::vector<Eigen::VectorXf> returns;
-    returns.reserve(episode_count);
-
     // Compute discounted returns
-    for (const episode& episode : episodes)
+    std::vector<Eigen::VectorXf> returns(episode_count);
+    for (int e = 0; e < episode_count; ++e)
     {
+        const episode& episode = episodes[e];
         const int episode_length = static_cast<int>(episode.size());
         ASSERT(episode_length > 0, continue, "REINFORCE episode is empty.");
         ASSERT(episode.back().done, continue, "REINFORCE must learn with full episodes.");
@@ -48,7 +47,7 @@ void reinforce_agent::learn(const std::vector<episode>& episodes)
             episode_return[t] = G;
         }
 
-        returns.push_back(std::move(episode_return));
+        returns[e] = episode_return;
     }
 
     // Normalize returns and subtract baseline
@@ -68,15 +67,14 @@ void reinforce_agent::learn(const std::vector<episode>& episodes)
         }
     }
 
-    // Accumulate gradients with REINFORCE
     std::vector<parameters> gradients;
     float steps = 0.0f;
 
+    // Accumulate gradients with REINFORCE
     for (int e = 0; e < episode_count; ++e)
     {
         const episode& episode = episodes[e];
-
-        for (int t = 0; t < static_cast<int>(episode.size()); ++t)
+        for (size_t t = 0; t < episode.size(); ++t)
         {
             const int action = episode[t].action;
             const float advantage = returns[e][t];
@@ -95,6 +93,7 @@ void reinforce_agent::learn(const std::vector<episode>& episodes)
 
     normalize(gradients, steps);
 
+    // Update the weights
     optimizer.step(gradients);
 }
 
