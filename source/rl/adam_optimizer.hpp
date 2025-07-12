@@ -7,7 +7,7 @@
 class adam_optimizer
 {
 public:
-    adam_optimizer(neural_network& policy, const float learning_rate = 0.0005f, const float beta1 = 0.9f, const float beta2 = 0.999f, const float epsilon = 1e-8f);
+    adam_optimizer(neural_network& policy, const float learning_rate, const float beta1 = 0.9f, const float beta2 = 0.999f, const float epsilon = 1e-8f);
 
 public:
     void step(const std::vector<parameters>& gradients);
