@@ -29,6 +29,9 @@ public:
     template<typename component>
     bool remove_component(const entity entity);
 
+    template<typename component>
+    bool has_component(const entity entity) const;
+
     void clear();
 
 private:
@@ -69,4 +72,10 @@ template<typename component>
 const component& world::get_component(const entity entity) const
 {
     return registry.get<component>(entity);
+}
+
+template<typename component>
+bool world::has_component(const entity entity) const
+{
+    return registry.any_of<component>(entity);
 }
