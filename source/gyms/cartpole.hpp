@@ -12,7 +12,7 @@
 class cartpole_environment
 {
 public:
-    float step(const float dt, const action& action);
+    float step(const float dt, const action action);
 
     void reset();
 

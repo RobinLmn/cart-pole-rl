@@ -66,7 +66,7 @@ bool cartpole_environment::is_done() const
     return std::abs(cart_x) > cart_limit || std::abs(pole_angle) > angle_limit || step_index >= max_steps;
 }
 
-float cartpole_environment::step(const float dt, const action& action)
+float cartpole_environment::step(const float dt, const action action)
 {
     ASSERT(action.is_discrete(), return 0.f, "Expected a discrete action for cartpole environment.");
 
