@@ -32,6 +32,13 @@ float random_uniform(const float min, const float max)
     return dist(rng);
 }
 
+float normal_distribution(const float mean, const float stddev)
+{
+    static thread_local std::mt19937 gen(std::random_device{}());
+    std::normal_distribution<float> dist(mean, stddev);
+    return dist(gen);
+}
+
 float cross(const glm::vec2& a, const glm::vec2& b)
 {
     return a.x * b.y - a.y * b.x;

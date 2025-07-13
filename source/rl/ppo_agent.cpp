@@ -18,16 +18,30 @@ ppo_agent::ppo_agent(const neural_network& actor, const neural_network& critic, 
     , epsilon{ epsilon }
     , ppo_epochs{ ppo_epochs }
 {
-    ASSERT(space == action_space::DISCRETE, return, "PPO only implements discrete actions.");
 }
 
 action ppo_agent::act(const Eigen::VectorXf& state) const
 {
-    const Eigen::VectorXf& logits = actor.forward(state);
-    const Eigen::VectorXf& probs = softmax(logits);
+    if (space == action_space::DISCRETE)
+    {
+        const Eigen::VectorXf& logits = actor.forward(state);
+        const Eigen::VectorXf& probs = softmax(logits);
+        const int discrete_action = sample_from_distribution(probs);
+        return action(discrete_action);
+    }
+    else
+    {
+        const Eigen::VectorXf& actions = actor.forward(state);
 
-    const int action = sample_from_distribution(probs);
-    return action;
+        // Add exploration noise
+        Eigen::VectorXf noisy_actions = actions;
+        for (int i = 0; i < actions.size(); ++i)
+        {
+            noisy_actions[i] += normal_distribution(0.0f, 0.1f);
+        }
+
+        return action(noisy_actions);
+    }
 }
 
 void ppo_agent::learn(const std::vector<episode>& episodes)
@@ -66,7 +80,22 @@ void ppo_agent::learn(const std::vector<episode>& episodes)
 
             const Eigen::VectorXf& logits = actor.forward(step.state);
             const Eigen::VectorXf& probs = softmax(logits);
-            episode_old_log_probs[t] = std::log(std::max(probs(step.action.as_discrete()), 1e-8f));
+            if (space == action_space::DISCRETE)
+            {
+                episode_old_log_probs[t] = std::log(std::max(probs(step.action.as_discrete()), 1e-8f));
+            }
+            else
+            {
+                // For continuous actions, assume Gaussian policy with unit variance
+                const Eigen::VectorXf& continuous_action = step.action.as_continuous();
+                float log_prob = 0.0f;
+                for (int i = 0; i < continuous_action.size(); ++i)
+                {
+                    const float diff = continuous_action(i) - logits(i);
+                    log_prob += -0.5f * diff * diff;  // Gaussian log probability (ignoring constant terms)
+                }
+                episode_old_log_probs[t] = log_prob;
+            }
         }
 
         returns[e] = std::move(episode_returns);
@@ -102,7 +131,6 @@ void ppo_agent::learn(const std::vector<episode>& episodes)
             const episode& episode = episodes[e];
             for (int t = 0; t < static_cast<int>(episode.size()); ++t)
             {
-                const int action = episode[t].action.as_discrete();
                 const Eigen::VectorXf& state = episode[t].state;
                 const float advantage = advantages[e][t];
                 const float return_value = returns[e][t];
@@ -117,15 +145,42 @@ void ppo_agent::learn(const std::vector<episode>& episodes)
 
                 // Actor update with PPO clipping
                 const Eigen::VectorXf& logits = actor.forward(state);
-                const Eigen::VectorXf& probs = softmax(logits);
-                const float new_log_prob = std::log(std::max(probs(action), 1e-8f));
+                float new_log_prob;
+                Eigen::VectorXf actor_gradient;
                 
-                const float ratio = std::exp(new_log_prob - old_log_prob);
-                const float clipped_ratio = std::clamp(ratio, 1.0f - epsilon, 1.0f + epsilon);
+                if (space == action_space::DISCRETE)
+                {
+                    const int action = episode[t].action.as_discrete();
+                    const Eigen::VectorXf& probs = softmax(logits);
+                    new_log_prob = std::log(std::max(probs(action), 1e-8f));
+                    
+                    const float ratio = std::exp(new_log_prob - old_log_prob);
+                    const float clipped_ratio = std::clamp(ratio, 1.0f - epsilon, 1.0f + epsilon);
+                    const float policy_loss = -std::min(ratio * advantage, clipped_ratio * advantage);
+                    
+                    actor_gradient = policy_loss * (Eigen::VectorXf::Unit(probs.size(), action) - probs);
+                }
+                else
+                {
+                    const Eigen::VectorXf& continuous_action = episode[t].action.as_continuous();
+                    new_log_prob = 0.0f;
+                    for (int i = 0; i < continuous_action.size(); ++i)
+                    {
+                        const float diff = continuous_action(i) - logits(i);
+                        new_log_prob += -0.5f * diff * diff;
+                    }
+                    
+                    const float ratio = std::exp(new_log_prob - old_log_prob);
+                    const float clipped_ratio = std::clamp(ratio, 1.0f - epsilon, 1.0f + epsilon);
+                    const float policy_loss = -std::min(ratio * advantage, clipped_ratio * advantage);
+                    
+                    actor_gradient = Eigen::VectorXf::Zero(logits.size());
+                    for (int i = 0; i < continuous_action.size(); ++i)
+                    {
+                        actor_gradient(i) = policy_loss * (continuous_action(i) - logits(i));
+                    }
+                }
                 
-                const float policy_loss = -std::min(ratio * advantage, clipped_ratio * advantage);
-                
-                const Eigen::VectorXf actor_gradient = policy_loss * (Eigen::VectorXf::Unit(probs.size(), action) - probs);
                 const std::vector<parameters>& actor_step_gradients = actor.backward(actor_gradient);
                 accumulate(actor_gradients, actor_step_gradients);
 
