@@ -53,8 +53,8 @@ void train()
 		if (batch % 10 != 0 && batch != batches - 1)
 			return;
 		
-		// const std::string filename = std::format("models/ppo/ppo_batch_{}_reward_{:.0f}.mdl", batch, average_reward);
-		// cartpole_agent.save(filename.c_str());
+		const std::string filename = std::format("models/ppo/ppo_batch_{}_reward_{:.0f}.mdl", batch, average_reward);
+		cartpole_agent.save(filename.c_str());
 
 		LOG_INFO("Batch {}: Average Reward: {:.2f}", batch, average_reward);
 	};
@@ -73,6 +73,6 @@ int main()
 	logger::initialize();
 #endif
 
-	// replay("models/actor_critic/actor_critic_batch_2999_reward_500.mdl");
-	train();
+	replay("models/ppo/ppo_batch_380_reward_500.mdl");
+	//train();
 };

@@ -4,14 +4,15 @@ An implementation of the classic cart-pole task built from scratch in C++. The p
 
 <div align="center">
   <img src="docs/reinforce_adam_trained.gif" height="200" alt="Trained agent"/>
-  <img src="docs/reinforce_adam_training_reward_per_batch_plot.png" height="200" alt="Adam training curve" title="Training reward with Adam"/>
+  <img src="docs/ppo_training_reward_per_batch_plot.png" height="200" alt="PPO training curve" title="Training reward with PPO"/>
 </div>
 
 ## Highlights
 
-- **Custom RL library** using Eigen for matrix operations.
-- **REINFORCE policy gradient** with running baseline and Adam optimizer.
-- **2D physics engine** with rigid bodies, hinge joints, and collisions built from scratch.
+- **PPO (Proximal Policy Optimization)** implementation with actor-critic architecture.
+- **REINFORCE policy gradient** implementation with running baseline and Adam optimizer.
+- **Adam** and **SGD with Momentum** optimizer implementations.
+- **2D physics engine** with rigid bodies, hinge joints, and collisions, built from scratch.
 - **Entity Component System** built with EnTT for fast simulation.
 - **SFML visualization** with a headless mode for training.
 - **Batch trainer** capable of running multiple environments in parallel.
@@ -24,18 +25,43 @@ The environment, defined in [`source/gyms/cartpole.cpp`](source/gyms/cartpole.cp
 - **Reward function.** The agent receives a unit reward for every timestep in the simulation.
 - **Termination.** The episode ends when the cart leaves the ±2.4m bounds, the pole falls beyond ±12°, or after 500 simulation steps.
 
-## Agent
+## Neural Network
 
-The agent follows the REINFORCE policy gradient algorithm implemented in [`source/rl/reinforce_agent.cpp`](source/rl/reinforce_agent.cpp). The policy network is defined in [`source/rl/neural_network.cpp`](source/rl/neural_network.cpp) and initialised with Xavier weights. The architecture is defined as:
+The neural network implementation is defined in [`source/rl/neural_network.cpp`](source/rl/neural_network.cpp) and provides a flexible feedforward architecture using Eigen for matrix operations. Its weights are initialized using Xavier/Glorot initialization and each layer supports **ReLU**, **tanh** and **identity** activations.
+
+## PPO Agent
+
+The PPO agent implements the Proximal Policy Optimization algorithm with an actor-critic architecture defined in [`source/rl/ppo_agent.cpp`](source/rl/ppo_agent.cpp).
+
+**Actor Network Architecture:**
+- **Input layer (4 neurons).** Cart position, cart velocity, pole angle and pole angular velocity.
+- **Hidden layers (128 neurons & 64 neurons)**. ReLU activations.
+- **Output layer (2 neurons).** Action logits for discrete actions.
+
+**Critic Network Architecture:**
+- **Input layer (4 neurons).** Cart position, cart velocity, pole angle and pole angular velocity.
+- **Hidden layers (128 neurons & 64 neurons)**. ReLU activations.
+- **Output layer (1 neuron).** State value estimation.
+
+The PPO agent demonstrates superior performance and training stability compared to REINFORCE, consistently reaching the maximum reward of 500 in the CartPole environment.
+
+<div align="center">
+    <img src="docs/ppo_training_reward_per_batch_plot.png" width="400" alt="PPO Training Performance" title="PPO Training Performance"/>
+</div><br>
+
+## REINFORCE Agent
+
+The REINFORCE agent follows the REINFORCE policy gradient algorithm implemented in [`source/rl/reinforce_agent.cpp`](source/rl/reinforce_agent.cpp). The policy architecture is defined as:
 
 - **Input layer (4 neurons).** Cart position and velocity together with the pole angle and its angular velocity.
-- **Hidden layer (128 neurons).** Rectified linear units.
-- **Hidden layer (64 neurons).** Rectified linear units.
-- **Output layer (2 neurons).** Action logits representing left or right, transformed into probabilities via the softmax function.
+- **Hidden layers (128 neurons & 64 neurons)**. ReLU activations.
+- **Output layer (2 neurons).** Action logits for discrete actions.
 
-## Returns
+<div align="center">
+    <img src="docs/reinforce_adam_training_reward_per_batch_plot.png" width="400" alt="REINFORCE Training Performance" title="REINFORCE Training Performance"/>
+</div><br>
 
-A running baseline is subtracted from the returns and the result is normalised by the returns' standard deviation. Introducing a baseline significantly stabilises training and improves performance, as shown in the plot below.
+A running baseline is subtracted from the returns and the result is normalized by the returns' standard deviation. Introducing a baseline significantly stabilizes training and improves performance, as shown in the plot below.
 
 <div align="center">
     <img src="docs/reinforce_running_baseline_no_baseline_comparison_plot.png" width="400" alt="Running baseline comparison" title="Baseline versus no baseline"/>
@@ -60,7 +86,7 @@ In addition to the running baseline, a mean baseline and a no-baseline configura
 
 ## Optimizers
 
-With an Adam optimizer, the agent reaches an average reward of around 500 after approximately 500 batches. Using a stochastic gradient descent with momentum requires roughly 10 times more batches to achieve the same performance. The first comparison illustrates how momentum accelerates vanilla SGD and how SGD momentum compares with Adam.
+On REINFORCE with an Adam optimizer, the agent reaches an average reward of around 500 after approximately 500 batches. Using a stochastic gradient descent with momentum requires roughly 10 times more batches to achieve the same performance. The first comparison illustrates how momentum accelerates vanilla SGD and how SGD momentum compares with Adam.
 
 <div align="center">
   <img src="docs/reinforce_sgd_vs_sgd_momentum_comparison_full_data_plot.png" width="400" alt="SGD vs SGD momentum" title="SGD variants"/>
