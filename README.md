@@ -1,6 +1,6 @@
 # CartPole Reinforcement Learning
 
-An implementation of the classic cart-pole task built from scratch in C++. The project combines a reinforcement learning framework, a custom physics engine in an entity-component-system architecture, and an SFML-based renderer.
+An implementation of the classic cart-pole task built entirely from scratch, in C++. The project combines a custom reinforcement learning framework, a custom physics engine in an entity-component-system architecture, and an SFML-based renderer.
 
 <div align="center">
   <img src="docs/reinforce_adam_trained.gif" height="200" alt="Trained agent"/>
@@ -16,7 +16,7 @@ An implementation of the classic cart-pole task built from scratch in C++. The p
 - **Entity Component System** built with EnTT for fast simulation.
 - **SFML visualization** with a headless mode for training.
 - **Batch trainer** capable of running multiple environments in parallel.
-  
+
 ## Environment
 
 The environment, defined in [`source/gyms/cartpole.cpp`](source/gyms/cartpole.cpp), is responsible for updating the physics simulation and returning the reward given the agent's action.
@@ -27,7 +27,7 @@ The environment, defined in [`source/gyms/cartpole.cpp`](source/gyms/cartpole.cp
 
 ## Neural Network
 
-The neural network implementation is defined in [`source/rl/neural_network.cpp`](source/rl/neural_network.cpp) and provides a flexible feedforward architecture using Eigen for matrix operations. Its weights are initialized using Xavier/Glorot initialization and each layer supports **ReLU**, **tanh** and **identity** activations.
+The neural network is implemented from scratch in [`source/rl/neural_network.cpp`](source/rl/neural_network.cpp). It provides a flexible feedforward architecture using Eigen for matrix operations. Its weights are initialized using Xavier/Glorot initialization and each layer supports **ReLU**, **tanh** and **identity** activations.
 
 ## PPO Agent
 
